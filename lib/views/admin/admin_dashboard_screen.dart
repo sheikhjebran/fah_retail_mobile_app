@@ -568,7 +568,7 @@ class _QuickActionCard extends StatelessWidget {
 
 /// Placeholder for product form screen
 class AdminProductFormScreen extends StatelessWidget {
-  final String? productId;
+  final int? productId;
 
   const AdminProductFormScreen({super.key, this.productId});
 

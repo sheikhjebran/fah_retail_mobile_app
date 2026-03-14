@@ -45,9 +45,8 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
   }
 
   Future<void> _loadOrders({bool refresh = true}) async {
-    if (refresh) _currentPage = 1;
     await _presenter.loadOrders(
-      page: _currentPage,
+      refresh: refresh,
       status: _selectedStatus == 'all' ? null : _selectedStatus,
     );
   }
@@ -75,15 +74,24 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
   }
 
   @override
-  void showOrders(List<OrderModel> orders) {
+  void showOrders(List<OrderModel> orders, bool hasMore) {
     setState(() {
-      if (_currentPage == 1) {
-        _orders = orders;
-      } else {
-        _orders.addAll(orders);
-      }
-      _hasMore = orders.length >= 20;
+      _orders = orders;
+      _hasMore = hasMore;
     });
+  }
+
+  @override
+  void showEmptyState() {
+    setState(() {
+      _orders = [];
+      _hasMore = false;
+    });
+  }
+
+  @override
+  void showLoadMoreLoading() {
+    // Show loading indicator for pagination
   }
 
   @override
@@ -93,8 +101,7 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  @override
-  void showOrderUpdated() {
+  void _showOrderUpdated() {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Order status updated')));
@@ -244,7 +251,9 @@ class _AdminOrderCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    Formatters.formatDateTime(order.createdAt),
+                    order.createdAt != null
+                        ? Formatters.formatDateTime(order.createdAt!)
+                        : '',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -317,13 +326,13 @@ class _AdminOrderCard extends StatelessWidget {
 
           // Items summary
           Text(
-            '${order.items.length} item(s)',
+            '${order.items?.length ?? 0} item(s)',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
-          ...order.items
+          ...(order.items ?? [])
               .take(2)
               .map(
                 (item) => Padding(
@@ -352,9 +361,9 @@ class _AdminOrderCard extends StatelessWidget {
                   ),
                 ),
               ),
-          if (order.items.length > 2)
+          if ((order.items?.length ?? 0) > 2)
             Text(
-              '+${order.items.length - 2} more items',
+              '+${(order.items?.length ?? 0) - 2} more items',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.primary),

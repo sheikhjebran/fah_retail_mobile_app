@@ -9,7 +9,7 @@ import '../../presenters/cart_presenter.dart';
 
 /// Product detail screen with images carousel
 class ProductDetailScreen extends StatefulWidget {
-  final String productId;
+  final int productId;
 
   const ProductDetailScreen({super.key, required this.productId});
 
@@ -63,7 +63,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     setState(() => _isAddingToCart = true);
 
     try {
-      await _cartPresenter.addToCart(_product!.id, _quantity);
+      await _cartPresenter.addToCart(_product!, quantity: _quantity);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -116,6 +116,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void showAddedToCart() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Added to cart')));
   }
 
   @override
@@ -309,7 +316,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildImageCarousel() {
-    final images = _product!.images;
+    final images = _product!.images ?? [];
 
     if (images.isEmpty) {
       return Container(

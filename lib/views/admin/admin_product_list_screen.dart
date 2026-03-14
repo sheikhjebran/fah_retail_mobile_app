@@ -39,9 +39,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
   }
 
   Future<void> _loadProducts({bool refresh = true}) async {
-    if (refresh) _currentPage = 1;
     await _presenter.loadProducts(
-      page: _currentPage,
+      refresh: refresh,
       search: _searchController.text.isNotEmpty ? _searchController.text : null,
     );
   }
@@ -93,15 +92,24 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
   }
 
   @override
-  void showProducts(List<ProductModel> products) {
+  void showProducts(List<ProductModel> products, bool hasMore) {
     setState(() {
-      if (_currentPage == 1) {
-        _products = products;
-      } else {
-        _products.addAll(products);
-      }
-      _hasMore = products.length >= 20;
+      _products = products;
+      _hasMore = hasMore;
     });
+  }
+
+  @override
+  void showEmptyState() {
+    setState(() {
+      _products = [];
+      _hasMore = false;
+    });
+  }
+
+  @override
+  void showLoadMoreLoading() {
+    // Show loading indicator for pagination
   }
 
   @override
@@ -112,7 +120,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
   }
 
   @override
-  void showProductDeleted() {
+  void showProductDeleted(int productId) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Product deleted successfully')),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/cart_model.dart';
@@ -31,9 +32,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   bool _isPlacingOrder = false;
 
   // Pricing
-  int get _subtotal => widget.cart.totalAmount;
-  int get _deliveryFee => _subtotal >= 499 ? 0 : 49;
-  int get _total => _subtotal + _deliveryFee;
+  double get _subtotal => widget.cart.totalAmount.toDouble();
+  double get _deliveryFee => _subtotal >= 499 ? 0.0 : 49.0;
+  double get _total => _subtotal + _deliveryFee;
 
   @override
   void initState() {
@@ -69,26 +70,28 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   }
 
   void _initPayment() {
-    _paymentService.init(
+    _paymentService.initRazorpay(
       onSuccess: _onPaymentSuccess,
       onFailure: _onPaymentFailure,
-      onWalletResponse: _onPaymentWallet,
+      onExternalWallet: _onPaymentWallet,
     );
   }
 
-  void _onPaymentSuccess(String paymentId, String orderId, String signature) {
+  void _onPaymentSuccess(PaymentSuccessResponse response) {
     // Verify payment and complete order
-    _completeOrder(paymentId);
+    _completeOrder(response.paymentId ?? '');
   }
 
-  void _onPaymentFailure(int code, String message) {
+  void _onPaymentFailure(PaymentFailureResponse response) {
     setState(() => _isPlacingOrder = false);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Payment failed: $message')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Payment failed: ${response.message ?? "Unknown error"}'),
+      ),
+    );
   }
 
-  void _onPaymentWallet(Map<dynamic, dynamic> response) {
+  void _onPaymentWallet(ExternalWalletResponse response) {
     // Handle wallet response
   }
 
@@ -104,14 +107,19 @@ class _CheckoutScreenState extends State<CheckoutScreen>
 
     try {
       // Create Razorpay order
-      final razorpayOrder = await _paymentService.createPaymentOrder(_total);
+      final razorpayOrder = await _paymentService.createPaymentOrder(
+        amount: _total,
+        currency: 'INR',
+      );
 
       // Open payment gateway
-      _paymentService.openPaymentGateway(
-        orderId: razorpayOrder['id'],
-        amount: _total,
+      _paymentService.openPaymentSheet(
+        orderId: razorpayOrder.orderId,
+        amount: razorpayOrder.amount,
         name: 'FAH Retail',
         description: 'Order payment',
+        email: '', // TODO: Get from user profile
+        phone: '', // TODO: Get from user profile
       );
     } catch (e) {
       setState(() => _isPlacingOrder = false);
@@ -124,24 +132,16 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   Future<void> _completeOrder(String paymentId) async {
     final request = PlaceOrderRequest(
       addressId: _selectedAddress!.id,
-      paymentId: paymentId,
-      items:
-          widget.cart.items
-              .map(
-                (item) => OrderItemModel(
-                  id: '',
-                  productId: item.productId,
-                  productName: item.productName,
-                  productImage: item.productImage,
-                  quantity: item.quantity,
-                  price: item.price,
-                  subtotal: item.subtotal,
-                ),
-              )
-              .toList(),
+      paymentMethod: 'razorpay',
+      razorpayPaymentId: paymentId,
     );
 
-    await _orderPresenter.placeOrder(request);
+    await _orderPresenter.placeOrder(
+      amount: _total,
+      email: '', // TODO: Get from user profile
+      phone: '', // TODO: Get from user profile
+      name: '', // TODO: Get from user profile
+    );
   }
 
   void _showAddressBottomSheet() {
@@ -188,6 +188,37 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void showAddresses(List<AddressModel> addresses) {
+    setState(() {
+      _addresses = addresses;
+      if (_addresses.isNotEmpty && _selectedAddress == null) {
+        _selectedAddress = _addresses.firstWhere(
+          (a) => a.isDefault,
+          orElse: () => _addresses.first,
+        );
+      }
+    });
+  }
+
+  @override
+  void showPaymentMethods(List<PaymentMethod> methods) {
+    // Payment methods loaded
+  }
+
+  @override
+  void showPaymentProcessing() {
+    setState(() => _isPlacingOrder = true);
+  }
+
+  @override
+  void showPaymentFailed(String message) {
+    setState(() => _isPlacingOrder = false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Payment failed: $message')));
   }
 
   @override
@@ -402,7 +433,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
 
   Widget _buildPriceRow(
     String label,
-    int amount, {
+    double amount, {
     bool isBold = false,
     String? note,
   }) {

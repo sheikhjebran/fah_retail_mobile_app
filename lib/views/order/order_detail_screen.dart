@@ -7,7 +7,7 @@ import '../../presenters/order_presenter.dart';
 
 /// Order detail screen
 class OrderDetailScreen extends StatefulWidget {
-  final String orderId;
+  final int orderId;
 
   const OrderDetailScreen({super.key, required this.orderId});
 
@@ -100,6 +100,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
   }
 
   @override
+  void showStatusHistory(List<OrderStatusHistoryModel> history) {
+    // Status history is already shown through the order model
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
@@ -130,7 +135,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
               const SizedBox(height: 16),
 
               // Order timeline
-              if (_order!.statusHistory.isNotEmpty) ...[
+              if (_order!.statusHistory != null &&
+                  _order!.statusHistory!.isNotEmpty) ...[
                 _buildTimeline(),
                 const SizedBox(height: 16),
               ],
@@ -247,9 +253,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          ...List.generate(_order!.statusHistory.length, (index) {
-            final history = _order!.statusHistory[index];
-            final isLast = index == _order!.statusHistory.length - 1;
+          ...List.generate(_order!.statusHistory!.length, (index) {
+            final history = _order!.statusHistory![index];
+            final isLast = index == _order!.statusHistory!.length - 1;
 
             return IntrinsicHeight(
               child: Row(
@@ -325,17 +331,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Items (${_order!.items.length})',
+            'Items (${_order!.items?.length ?? 0})',
             style: Theme.of(
               context,
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ...List.generate(_order!.items.length, (index) {
-            final item = _order!.items[index];
+          ...List.generate(_order!.items?.length ?? 0, (index) {
+            final item = _order!.items![index];
             return Padding(
               padding: EdgeInsets.only(
-                bottom: index < _order!.items.length - 1 ? 12 : 0,
+                bottom: index < (_order!.items?.length ?? 1) - 1 ? 12 : 0,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,19 +468,23 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
             ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          _buildPriceRow('Subtotal', _order!.subtotal),
+          _buildPriceRow('Subtotal', _order!.subtotal.toInt()),
           const SizedBox(height: 8),
           _buildPriceRow(
             'Delivery Fee',
-            _order!.deliveryFee,
+            _order!.deliveryFee.toInt(),
             note: _order!.deliveryFee == 0 ? 'FREE' : null,
           ),
           if (_order!.discount > 0) ...[
             const SizedBox(height: 8),
-            _buildPriceRow('Discount', -_order!.discount, isDiscount: true),
+            _buildPriceRow(
+              'Discount',
+              -_order!.discount.toInt(),
+              isDiscount: true,
+            ),
           ],
           const Divider(height: 24),
-          _buildPriceRow('Total', _order!.totalAmount, isBold: true),
+          _buildPriceRow('Total', _order!.totalAmount.toInt(), isBold: true),
         ],
       ),
     );
@@ -506,7 +516,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen>
           )
         else
           Text(
-            '${isDiscount ? '-' : ''}${Formatters.formatPriceInt(amount.abs())}',
+            '${isDiscount ? '-' : ''}${Formatters.formatPriceInt(amount.abs().toDouble())}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: isBold ? FontWeight.bold : null,
               color: isDiscount ? AppColors.success : null,
