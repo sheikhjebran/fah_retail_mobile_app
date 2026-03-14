@@ -6,12 +6,12 @@ python-multipart==0.0.6
 # Database
 sqlalchemy==2.0.25
 pymysql==1.1.0
-alembic==1.13.1
 
 # Authentication
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 pydantic[email]==2.5.3
+pydantic-settings==2.1.0
 
 # Cloudinary
 cloudinary==1.38.0

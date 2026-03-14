@@ -8,11 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, OtpVerification
+from app.models import User, OTP
 from app.schemas import (
-    SendOtpRequest,
-    SendOtpResponse,
-    VerifyOtpRequest,
+    SendOTPRequest,
+    SendOTPResponse,
+    VerifyOTPRequest,
     SignupRequest,
     AuthResponse,
     UserResponse,
@@ -22,8 +22,8 @@ from app.utils.auth import create_access_token, create_refresh_token
 router = APIRouter()
 
 
-@router.post("/send-otp", response_model=SendOtpResponse)
-async def send_otp(request: SendOtpRequest, db: Session = Depends(get_db)):
+@router.post("/send-otp", response_model=SendOTPResponse)
+async def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
     """Send OTP to phone number."""
     phone = request.phone
 
@@ -32,7 +32,7 @@ async def send_otp(request: SendOtpRequest, db: Session = Depends(get_db)):
 
     # Store OTP in database
     expires_at = datetime.utcnow() + timedelta(minutes=10)
-    otp_record = OtpVerification(
+    otp_record = OTP(
         phone=phone,
         otp=otp,
         expires_at=expires_at,
@@ -44,23 +44,23 @@ async def send_otp(request: SendOtpRequest, db: Session = Depends(get_db)):
     # For development, just return success
     print(f"OTP for {phone}: {otp}")  # Debug only
 
-    return SendOtpResponse(
+    return SendOTPResponse(
         success=True,
         message="OTP sent successfully",
-        otp_sent=True,
+        otp=otp,  # Return OTP in dev mode
     )
 
 
 @router.post("/verify-otp")
-async def verify_otp(request: VerifyOtpRequest, db: Session = Depends(get_db)):
+async def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     """Verify OTP and check if user exists."""
     # Find valid OTP
-    otp_record = db.query(OtpVerification).filter(
-        OtpVerification.phone == request.phone,
-        OtpVerification.otp == request.otp,
-        OtpVerification.is_verified == False,
-        OtpVerification.expires_at > datetime.utcnow(),
-    ).order_by(OtpVerification.created_at.desc()).first()
+    otp_record = db.query(OTP).filter(
+        OTP.phone == request.phone,
+        OTP.otp == request.otp,
+        OTP.is_verified == False,
+        OTP.expires_at > datetime.utcnow(),
+    ).order_by(OTP.created_at.desc()).first()
 
     if not otp_record:
         raise HTTPException(
