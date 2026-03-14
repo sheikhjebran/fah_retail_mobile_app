@@ -20,12 +20,14 @@ def product_to_response(product: Product) -> dict:
         "id": product.id,
         "name": product.name,
         "description": product.description,
-        "price": product.price,
-        "discount_price": product.discount_price,
-        "stock": product.stock,
+        "price": float(product.price) if product.price else 0,
+        "discount_price": float(product.discount_price) if product.discount_price else None,
+        "qty": product.qty,
         "category_id": product.category_id,
         "category_name": product.category.name if product.category else None,
         "is_trending": product.is_trending,
+        "primary_image": product.primary_image,
+        "shades": product.shades,
         "images": [
             {
                 "id": img.id,
@@ -34,8 +36,8 @@ def product_to_response(product: Product) -> dict:
                 "sort_order": img.sort_order,
             }
             for img in sorted(product.images, key=lambda x: x.sort_order)
-        ],
-        "created_at": product.created_at,
+        ] if product.images else [],
+        "created_at": product.created_at.isoformat() if product.created_at else None,
     }
 
 

@@ -5,11 +5,11 @@ Admin route handlers.
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 
 from app.database import get_db
-from app.models import User, Product, ProductImage, Category, Order, OrderItem, OrderStatusHistory, OrderStatus
+from app.models import User, Product, ProductImage, Category, Order, OrderItem, OrderStatusHistory, OrderStatus, UserRole
 from app.schemas import ProductCreate, ProductUpdate, OrderStatusUpdate, DashboardStatsResponse
 from app.utils.auth import get_admin_user
 from app.routes.products import product_to_response
@@ -36,8 +36,8 @@ async def get_dashboard_stats(
     total_products = db.query(Product).filter(
         Product.is_active == True).count()
 
-    # Total customers
-    total_customers = db.query(User).filter(User.is_admin == False).count()
+    # Total customers (non-admin users)
+    total_customers = db.query(User).filter(User.role != UserRole.admin).count()
 
     # Orders by status
     orders_by_status = {}
@@ -89,14 +89,20 @@ async def get_admin_products(
     db: Session = Depends(get_db),
 ):
     """Get all products for admin."""
-    query = db.query(Product)
+    # Base query for counting
+    base_query = db.query(Product)
 
     if search:
-        query = query.filter(Product.name.ilike(f"%{search}%"))
+        base_query = base_query.filter(Product.name.ilike(f"%{search}%"))
 
-    query = query.order_by(Product.created_at.desc())
+    total = base_query.count()
 
-    total = query.count()
+    # Query with eager loading for fetching
+    query = base_query.options(
+        joinedload(Product.category),
+        joinedload(Product.images),
+    ).order_by(Product.created_at.desc())
+
     offset = (page - 1) * page_size
     products = query.offset(offset).limit(page_size).all()
 

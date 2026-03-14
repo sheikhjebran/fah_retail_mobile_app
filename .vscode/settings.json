@@ -1,0 +1,15 @@
+{
+  "dart.flutterSdkPath": "C:\\Users\\sheik\\Documents\\GitHub\\flutter",
+  "dart.sdkPath": "C:\\tools\\dart-sdk",
+  "dart.lineLength": 80,
+  "editor.formatOnSave": true,
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [80],
+    "editor.selectionHighlight": false,
+    "editor.suggestSelection": "first",
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": "off"
+  }
+}

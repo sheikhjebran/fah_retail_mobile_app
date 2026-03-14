@@ -113,7 +113,7 @@ class AuthResponse {
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     return AuthResponse(
-      token: json['token'] as String,
+      token: (json['access_token'] ?? json['token']) as String,
       refreshToken: json['refresh_token'] as String?,
       user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
     );

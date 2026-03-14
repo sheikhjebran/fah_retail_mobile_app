@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/product_model.dart';
 import '../../presenters/admin_presenter.dart';
-import 'admin_dashboard_screen.dart';
+import 'admin_product_form_screen.dart';
 
 /// Admin product list screen
 class AdminProductListScreen extends StatefulWidget {
@@ -75,9 +75,15 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AdminProductFormScreen(productId: product.id),
+        builder:
+            (_) =>
+                AdminProductFormScreen(productId: product.id, product: product),
       ),
-    ).then((_) => _loadProducts());
+    ).then((result) {
+      if (result == true) {
+        _loadProducts();
+      }
+    });
   }
 
   // AdminProductListView implementation
@@ -131,7 +137,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Products'),
+        title: const Text('Products'),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -141,7 +148,11 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
                 MaterialPageRoute(
                   builder: (_) => const AdminProductFormScreen(),
                 ),
-              ).then((_) => _loadProducts());
+              ).then((result) {
+                if (result == true) {
+                  _loadProducts();
+                }
+              });
             },
           ),
         ],
@@ -206,10 +217,14 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AdminProductFormScreen()),
-          ).then((_) => _loadProducts());
+          ).then((result) {
+            if (result == true) {
+              _loadProducts();
+            }
+          });
         },
         icon: const Icon(Icons.add),
-        label: const Text('Add Product'),
+        label: const Text('Add'),
       ),
     );
   }

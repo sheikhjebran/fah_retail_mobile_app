@@ -7,6 +7,7 @@ import '../../core/utils/helpers.dart';
 import '../../models/user_model.dart';
 import '../../presenters/auth_presenter.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
 import 'signup_screen.dart';
 
 /// OTP verification screen
@@ -92,8 +93,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
     _startResendTimer();
   }
 
+  UserModel? _verifiedUser;
+
   @override
   void showVerificationSuccess(UserModel user) {
+    _verifiedUser = user;
     Helpers.showSuccess(context, 'Verified successfully');
   }
 
@@ -110,7 +114,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
 
   @override
   void navigateToDashboard() {
-    Helpers.navigateAndRemoveAll(context, const DashboardScreen());
+    if (_verifiedUser?.isAdmin == true) {
+      Helpers.navigateAndRemoveAll(context, const AdminDashboardScreen());
+    } else {
+      Helpers.navigateAndRemoveAll(context, const DashboardScreen());
+    }
   }
 
   @override

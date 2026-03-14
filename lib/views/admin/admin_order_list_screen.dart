@@ -111,7 +111,10 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Orders')),
+      appBar: AppBar(
+        title: const Text('Manage Orders'),
+        automaticallyImplyLeading: false,
+      ),
       body: Column(
         children: [
           // Status filter chips
