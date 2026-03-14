@@ -75,7 +75,9 @@ from app.schemas.schemas import (
 SendOtpRequest = SendOTPRequest
 SendOtpResponse = SendOTPResponse
 VerifyOtpRequest = VerifyOTPRequest
-AuthResponse = LoginResponse
+OrderStatusUpdate = UpdateOrderStatusRequest
+CreatePaymentOrderResponse = PaymentOrderResponse
+DashboardStatsResponse = DashboardStats
 
 __all__ = [
     "UserRole",
