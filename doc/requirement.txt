@@ -1,0 +1,51 @@
+give me a detailed plan for the mobile flutter application which i can give to my chatbot to build a complete flutter mobile application
+1. the project should be in advance mvp concept
+2. otp based signup and signin 
+3. it should have login screen and signup screen
+4. database is mysql
+5. when i launch app it should show the splash screen i have my own logo it should show in most genz glitter way and then if the user has logged in already then navigate to dashboard else signin screen 
+6. On dashboard it should show the small banner which keep swipping and upto 4 images swipping
+7. below banner it should show the top trending product, let it show in vertical order upto 6 product if the admin has selected the top trending product and it shoud show view all product button
+8. below trending product it should show the discounted product vertically and upto 6 product and below this show view all product button
+9. in dashboard it should show few tabs like , home, products, cart, Order, profile
+10. when user click on view all product button it should navigate to products tab
+11. user can also click on product tab on dashboard screen and navigate to different tab
+12. when user navigate to product tab it should show all products , and on top it should provide product filter based on category and price 
+13. when i select the product it should get added to cart, and on screen it should show the added item along with the price, qty . if there is any discount then it sould also show. 
+14. when user wishes to place order it should show the address which he has given in signup screen plus also provide option to add new address if he want the order to be delivered in different location, 
+15. once the user place the order it should navigate to the order screen where it should show the newly placed order and its status should be pending
+16. user should be updated with the order status as it get updated on app , like pending if its newly placed order, when admin accept order it should change to order-placed, when the product is dispacted to delivery  then it should show in transit/on-the-way, and when the order reached to the user it should show order delivered, it should also have the information as when it was delivered similar to tracking date and time , 
+17. user can also see his older product delivery status as in the order section by scrollowing down .
+18. For payment he can pay by using gpay, phone pay recommend what is best approach
+
+Admin:
+1. admin should have the tabs, home, product, order , profile
+2. on home screen it should show the admin specific dashboard suggest wat can be shown 
+3. when admin navigate to the product , he should have permission to add / edit/ delete the product 
+, the product will have product name , description, qty, price, discounted price, shades , product images( he can upload max upt 5 images per product , and one image as primary image which shall be used as primary image)
+4. on product screen he should be able to filter the product basaed on category, qty or search by product name, 
+5. on order screen , he can view the orders, he can filter/search based on order number, order status ( recommend best way he can manage the order)
+6. follow the order management system so that both admin and user get there proper product updates.
+
+
+Category. 
+
+Hair band
+Hair pins
+Saree pins
+Clips
+Necklace 
+Braslet 
+Rings
+Watches
+Fancy mirror 
+
+Earings. 
+Sub category 
+Crystal earrings 
+Long earrings 
+Short earings 
+Round earings 
+Rose gold earrings 
+Silver plated earrings 
+Gold plated earrings
