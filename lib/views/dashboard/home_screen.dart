@@ -6,7 +6,6 @@ import '../../presenters/product_presenter.dart';
 import '../../services/banner_service.dart';
 import '../../widgets/banner_slider.dart';
 import '../../widgets/product_card.dart';
-import '../product/product_list_screen.dart';
 import '../product/product_detail_screen.dart';
 
 /// Home screen with banners and product sections

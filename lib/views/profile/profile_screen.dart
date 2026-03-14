@@ -269,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (_user?.email != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    _user!.email!,
+                    _user!.email,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 12,

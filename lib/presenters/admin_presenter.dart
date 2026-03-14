@@ -2,7 +2,6 @@ import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/common_models.dart';
 import '../services/admin_service.dart';
-import '../core/constants/app_constants.dart';
 
 /// View contract for admin dashboard
 abstract class AdminDashboardView {

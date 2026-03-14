@@ -19,7 +19,7 @@ class _CartScreenState extends State<CartScreen> implements CartView {
 
   CartModel? _cart;
   bool _isLoading = true;
-  Map<String, bool> _updatingItems = {};
+  final Map<String, bool> _updatingItems = {};
 
   @override
   void initState() {
