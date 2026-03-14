@@ -21,7 +21,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
 
   List<ProductModel> _products = [];
   bool _isLoading = true;
-  int _currentPage = 1;
+  final int _currentPage = 1;
   bool _hasMore = true;
 
   @override

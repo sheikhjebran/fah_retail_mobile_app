@@ -19,7 +19,7 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
   List<OrderModel> _orders = [];
   bool _isLoading = true;
   String? _selectedStatus;
-  int _currentPage = 1;
+  final int _currentPage = 1;
   bool _hasMore = true;
 
   final List<String> _statusFilters = [

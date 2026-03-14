@@ -170,8 +170,8 @@ class AppTheme {
     );
   }
 
-  static CardTheme get _cardTheme {
-    return CardTheme(
+  static CardThemeData get _cardTheme {
+    return CardThemeData(
       elevation: 2,
       color: AppColors.card,
       surfaceTintColor: Colors.transparent,
