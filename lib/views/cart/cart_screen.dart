@@ -19,12 +19,12 @@ class _CartScreenState extends State<CartScreen> implements CartView {
 
   CartModel? _cart;
   bool _isLoading = true;
-  final Map<String, bool> _updatingItems = {};
+  final Map<int, bool> _updatingItems = {};
 
   @override
   void initState() {
     super.initState();
-    _presenter.attach(this);
+    _presenter.attachView(this);
     _loadCart();
   }
 
@@ -45,7 +45,7 @@ class _CartScreenState extends State<CartScreen> implements CartView {
     }
 
     setState(() => _updatingItems[item.id] = true);
-    await _presenter.updateCartItem(item.id, newQuantity);
+    await _presenter.updateQuantity(item.id, newQuantity);
     setState(() => _updatingItems.remove(item.id));
   }
 
@@ -111,17 +111,41 @@ class _CartScreenState extends State<CartScreen> implements CartView {
   }
 
   @override
-  void showItemAdded(String productName) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$productName added to cart')));
+  void showItemAdded(CartItemModel item) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${item.productName} added to cart')),
+    );
   }
 
   @override
-  void showItemRemoved(String productName) {
+  void showItemUpdated(CartItemModel item) {
+    // Item was updated, cart will be refreshed
+  }
+
+  @override
+  void showItemRemoved(int cartItemId) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('$productName removed from cart')));
+    ).showSnackBar(const SnackBar(content: Text('Item removed from cart')));
+  }
+
+  @override
+  void showCartCleared() {
+    setState(() => _cart = const CartModel());
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Cart cleared')));
+  }
+
+  @override
+  void showEmptyCart() {
+    setState(() => _cart = const CartModel());
+  }
+
+  @override
+  void updateCartBadge(int count) {
+    // This would update a badge in the app bar or tab bar
+    // For now, just a placeholder
   }
 
   @override
@@ -249,7 +273,7 @@ class _CartScreenState extends State<CartScreen> implements CartView {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 Text(
-                  Formatters.formatPriceInt(_cart!.totalAmount),
+                  Formatters.formatPrice(_cart!.totalAmount),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -342,7 +366,7 @@ class _CartItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  Formatters.formatPriceInt(item.price),
+                  Formatters.formatPrice(item.price),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -389,7 +413,7 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      Formatters.formatPriceInt(item.subtotal),
+                      Formatters.formatPrice(item.subtotal),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
