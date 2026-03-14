@@ -70,6 +70,17 @@ class DashboardStatsModel extends Equatable {
     this.categorySales,
   });
 
+  /// Convenience getters for admin dashboard
+  double get totalRevenue => todaySales;
+  int get totalCustomers => totalOrders;
+  Map<String, double> get revenueByMonth => {};
+  Map<String, int> get ordersByStatus => {
+    'pending': pendingOrders,
+    'delivered': deliveredOrders,
+    'cancelled': cancelledOrders,
+  };
+  List<dynamic> get recentOrders => [];
+
   factory DashboardStatsModel.fromJson(Map<String, dynamic> json) {
     return DashboardStatsModel(
       todaySales: (json['today_sales'] as num).toDouble(),

@@ -112,6 +112,11 @@ class AdminPresenter {
 
   // ==================== Dashboard ====================
 
+  /// Load dashboard stats (alias for loadDashboard)
+  Future<void> loadDashboardStats() async {
+    await loadDashboard();
+  }
+
   /// Load dashboard stats
   Future<void> loadDashboard() async {
     _dashboardView?.showLoading();
@@ -453,6 +458,32 @@ class AdminPresenter {
     } catch (e) {
       _orderDetailView?.hideLoading();
       _orderDetailView?.showError(e.toString());
+    }
+  }
+
+  /// Update order status (convenience method for order list)
+  Future<void> updateOrderStatus(int orderId, String status) async {
+    try {
+      switch (status) {
+        case 'order_placed':
+          await acceptOrder(orderId);
+          break;
+        case 'in_transit':
+          await dispatchOrder(orderId);
+          break;
+        case 'delivered':
+          await markDelivered(orderId);
+          break;
+        case 'cancelled':
+          await cancelOrder(orderId);
+          break;
+        default:
+          _orderListView?.showError('Invalid status');
+      }
+      // Refresh the order list
+      await loadOrders(refresh: true);
+    } catch (e) {
+      _orderListView?.showError(e.toString());
     }
   }
 }
