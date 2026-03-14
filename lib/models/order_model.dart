@@ -51,6 +51,24 @@ class OrderModel extends Equatable {
     return items!.fold(0, (sum, item) => sum + item.qty);
   }
 
+  /// Get address (convenience getter for deliveryAddress)
+  AddressModel? get address => deliveryAddress;
+
+  /// Get subtotal (convenience getter - same as totalAmount for now)
+  double get subtotal => totalAmount;
+
+  /// Get delivery fee (default 0, can be extended)
+  double get deliveryFee => 0;
+
+  /// Get discount amount (default 0, can be extended)
+  double get discount => 0;
+
+  /// Get estimated delivery date
+  DateTime? get estimatedDelivery {
+    if (createdAt == null) return null;
+    return createdAt!.add(const Duration(days: 5));
+  }
+
   /// Create OrderModel from JSON
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
@@ -179,6 +197,18 @@ class OrderItemModel extends Equatable {
     final unitPrice = discountPrice ?? price;
     return unitPrice * qty;
   }
+
+  /// Get subtotal (alias for total)
+  double get subtotal => total;
+
+  /// Get quantity (alias for qty)
+  int get quantity => qty;
+
+  /// Get product name (convenience getter)
+  String get productName => product?.name ?? 'Unknown Product';
+
+  /// Get product image (convenience getter)
+  String? get productImage => product?.primaryImage;
 
   /// Get savings
   double get savings {

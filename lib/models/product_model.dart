@@ -48,6 +48,12 @@ class ProductModel extends Equatable {
   /// Check if product is in stock
   bool get inStock => qty > 0;
 
+  /// Get stock count (alias for qty)
+  int get stock => qty;
+
+  /// Get category name (convenience getter)
+  String? get categoryName => category?.name;
+
   /// Check if product has multiple images
   bool get hasMultipleImages => images != null && images!.length > 1;
 

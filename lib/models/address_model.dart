@@ -34,6 +34,15 @@ class AddressModel extends Equatable {
     return '$city, $state - $pincode';
   }
 
+  /// Get full name (convenience getter)
+  String get fullName => name;
+
+  /// Get full address (convenience getter)
+  String get fullAddress => formattedAddress;
+
+  /// Get label (Home, Work, etc. - defaults to "Address")
+  String get label => isDefault ? 'Default' : 'Address';
+
   /// Create AddressModel from JSON
   factory AddressModel.fromJson(Map<String, dynamic> json) {
     return AddressModel(

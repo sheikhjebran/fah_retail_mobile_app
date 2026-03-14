@@ -35,6 +35,18 @@ class CartItemModel extends Equatable {
     return (product!.price - product!.discountPrice!) * quantity;
   }
 
+  /// Get product name (convenience getter)
+  String get productName => product?.name ?? 'Unknown Product';
+
+  /// Get product image (convenience getter)
+  String? get productImage => product?.primaryImage;
+
+  /// Get unit price (convenience getter)
+  double get price => product?.displayPrice ?? 0;
+
+  /// Get subtotal (convenience getter)
+  double get subtotal => totalPrice;
+
   /// Create CartItemModel from JSON
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
     return CartItemModel(
@@ -101,6 +113,12 @@ class CartModel extends Equatable {
 
   /// Check if cart is not empty
   bool get isNotEmpty => items.isNotEmpty;
+
+  /// Get total items count (convenience getter)
+  int get totalItems => itemCount;
+
+  /// Get total amount (convenience getter)
+  double get totalAmount => subtotal;
 
   /// Get cart subtotal
   double get subtotal => items.fold(0, (sum, item) => sum + item.totalPrice);
