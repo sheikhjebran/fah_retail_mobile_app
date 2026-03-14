@@ -125,11 +125,13 @@ class OtpResponse {
   final bool success;
   final String message;
   final String? sessionId;
+  final bool isNewUser;
 
   const OtpResponse({
     required this.success,
     required this.message,
     this.sessionId,
+    this.isNewUser = false,
   });
 
   factory OtpResponse.fromJson(Map<String, dynamic> json) {
@@ -137,6 +139,7 @@ class OtpResponse {
       success: json['success'] as bool,
       message: json['message'] as String,
       sessionId: json['session_id'] as String?,
+      isNewUser: json['is_new_user'] as bool? ?? false,
     );
   }
 }

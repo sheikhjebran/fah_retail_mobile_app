@@ -6,6 +6,7 @@ import '../../core/utils/helpers.dart';
 import '../../models/user_model.dart';
 import '../../presenters/auth_presenter.dart';
 import 'otp_verification_screen.dart';
+import 'signup_screen.dart';
 
 /// Login screen with phone number input
 class LoginScreen extends StatefulWidget {
@@ -40,6 +41,16 @@ class _LoginScreenState extends State<LoginScreen> implements LoginView {
       final phone = _phoneController.text.trim();
       _presenter.sendOtp(phone);
     }
+  }
+
+  void _navigateToSignup() {
+    final phone = _phoneController.text.trim();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SignupScreen(phone: phone, presenter: _presenter),
+      ),
+    );
   }
 
   // LoginView implementation
@@ -80,7 +91,12 @@ class _LoginScreenState extends State<LoginScreen> implements LoginView {
 
   @override
   void navigateToSignup(String phone) {
-    // Handled in OTP screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SignupScreen(phone: phone, presenter: _presenter),
+      ),
+    );
   }
 
   @override
@@ -202,6 +218,34 @@ class _LoginScreenState extends State<LoginScreen> implements LoginView {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // Signup link
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _navigateToSignup(),
+                        child: Text(
+                          'Sign Up',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // Terms text
                 Center(

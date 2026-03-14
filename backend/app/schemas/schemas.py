@@ -42,6 +42,7 @@ class SendOTPResponse(BaseModel):
     success: bool
     message: str
     otp: Optional[str] = None  # Only in dev mode
+    is_new_user: bool = False
 
 
 class VerifyOTPRequest(BaseModel):

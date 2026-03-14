@@ -63,6 +63,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
   }
 
   void _handleVerifyOtp() {
+    if (_isLoading) return; // Prevent double submission
     if (_otpController.text.length == AppConstants.otpLength) {
       widget.presenter.verifyOtp(_otpController.text);
     }

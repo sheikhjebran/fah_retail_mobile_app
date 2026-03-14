@@ -27,6 +27,18 @@ async def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
     """Send OTP to phone number."""
     phone = request.phone
 
+    # Check if user exists
+    user = db.query(User).filter(User.phone == phone).first()
+    is_new_user = user is None
+
+    # If user doesn't exist, return early with is_new_user flag
+    if is_new_user:
+        return SendOTPResponse(
+            success=False,
+            message="New user, please signup",
+            is_new_user=True,
+        )
+
     # Generate 6-digit OTP
     otp = str(random.randint(100000, 999999))
 
@@ -48,6 +60,7 @@ async def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
         success=True,
         message="OTP sent successfully",
         otp=otp,  # Return OTP in dev mode
+        is_new_user=False,
     )
 
 

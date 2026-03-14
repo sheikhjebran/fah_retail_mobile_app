@@ -86,15 +86,22 @@ class AuthPresenter {
       _currentPhone = phone;
       final response = await _authService.sendOtp(phone);
 
+      _loginView?.hideLoading();
+      _otpView?.hideLoading();
+
+      // Check if user is new - redirect to signup
+      if (response.isNewUser) {
+        _isNewUser = true;
+        _loginView?.showError(response.message);
+        _loginView?.navigateToSignup(phone);
+        return;
+      }
+
       if (response.success) {
         _currentSessionId = response.sessionId;
-        _loginView?.hideLoading();
-        _otpView?.hideLoading();
         _loginView?.showOtpSent(response.message, response.sessionId);
         _otpView?.startResendTimer();
       } else {
-        _loginView?.hideLoading();
-        _otpView?.hideLoading();
         _loginView?.showError(response.message);
         _otpView?.showError(response.message);
       }
