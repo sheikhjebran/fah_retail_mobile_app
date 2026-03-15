@@ -91,26 +91,21 @@ class CartPresenter {
         return;
       }
 
-      // Check if already in cart
-      final existingItem = _cart.getItemByProductId(product.id);
-      if (existingItem != null) {
-        // Update quantity instead
-        await updateQuantity(existingItem.id, existingItem.quantity + quantity);
-        return;
-      }
-
       final request = AddToCartRequest(
         productId: product.id,
         quantity: quantity,
       );
 
-      final item = await _cartService.addToCart(request);
+      // Backend returns full cart after adding item
+      final updatedCart = await _cartService.addToCart(request);
+      _cart = updatedCart;
 
-      // Update local cart
-      final updatedItems = List<CartItemModel>.from(_cart.items)..add(item);
-      _cart = _cart.copyWith(items: updatedItems);
+      // Find the newly added/updated item
+      final addedItem = _cart.getItemByProductId(product.id);
+      if (addedItem != null) {
+        _view?.showItemAdded(addedItem);
+      }
 
-      _view?.showItemAdded(item);
       _view?.showCart(_cart);
       _view?.updateCartBadge(_cart.itemCount);
     } catch (e) {

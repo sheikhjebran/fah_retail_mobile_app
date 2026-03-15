@@ -27,7 +27,8 @@ class CartService {
   }
 
   /// Add item to cart
-  Future<CartItemModel> addToCart(AddToCartRequest request) async {
+  /// Returns the full cart after adding the item
+  Future<CartModel> addToCart(AddToCartRequest request) async {
     try {
       final response = await _apiClient.post(
         ApiEndpoints.addToCart,
@@ -35,7 +36,8 @@ class CartService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return CartItemModel.fromJson(response.data);
+        // Backend returns full cart response
+        return CartModel.fromJson(response.data);
       }
 
       throw ApiException(response.data['message'] ?? 'Failed to add to cart');

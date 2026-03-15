@@ -9,23 +9,37 @@ class CartItemModel extends Equatable {
   final int quantity;
   final DateTime? createdAt;
 
+  // Flat fields from backend response
+  final String? _productName;
+  final String? _productImage;
+  final double? _price;
+  final double? _subtotal;
+
   const CartItemModel({
     required this.id,
     required this.productId,
     this.product,
     required this.quantity,
     this.createdAt,
-  });
+    String? productName,
+    String? productImage,
+    double? price,
+    double? subtotal,
+  }) : _productName = productName,
+       _productImage = productImage,
+       _price = price,
+       _subtotal = subtotal;
 
   /// Get item total price
   double get totalPrice {
-    if (product == null) return 0;
+    if (_subtotal != null) return _subtotal!;
+    if (product == null) return _price != null ? _price! * quantity : 0;
     return product!.displayPrice * quantity;
   }
 
   /// Get item original total price (before discount)
   double get originalTotalPrice {
-    if (product == null) return 0;
+    if (product == null) return _price != null ? _price! * quantity : 0;
     return product!.price * quantity;
   }
 
@@ -36,13 +50,13 @@ class CartItemModel extends Equatable {
   }
 
   /// Get product name (convenience getter)
-  String get productName => product?.name ?? 'Unknown Product';
+  String get productName => product?.name ?? _productName ?? 'Unknown Product';
 
   /// Get product image (convenience getter)
-  String? get productImage => product?.primaryImage;
+  String? get productImage => product?.displayImage ?? _productImage;
 
   /// Get unit price (convenience getter)
-  double get price => product?.displayPrice ?? 0;
+  double get price => product?.displayPrice ?? _price ?? 0;
 
   /// Get subtotal (convenience getter)
   double get subtotal => totalPrice;
@@ -61,6 +75,14 @@ class CartItemModel extends Equatable {
           json['created_at'] != null
               ? DateTime.parse(json['created_at'] as String)
               : null,
+      // Flat fields from backend
+      productName: json['product_name'] as String?,
+      productImage: json['product_image'] as String?,
+      price: json['price'] != null ? (json['price'] as num).toDouble() : null,
+      subtotal:
+          json['subtotal'] != null
+              ? (json['subtotal'] as num).toDouble()
+              : null,
     );
   }
 
@@ -72,6 +94,10 @@ class CartItemModel extends Equatable {
       'product': product?.toJson(),
       'quantity': quantity,
       'created_at': createdAt?.toIso8601String(),
+      'product_name': _productName,
+      'product_image': _productImage,
+      'price': _price,
+      'subtotal': _subtotal,
     };
   }
 
@@ -82,6 +108,10 @@ class CartItemModel extends Equatable {
     ProductModel? product,
     int? quantity,
     DateTime? createdAt,
+    String? productName,
+    String? productImage,
+    double? price,
+    double? subtotal,
   }) {
     return CartItemModel(
       id: id ?? this.id,
@@ -89,11 +119,25 @@ class CartItemModel extends Equatable {
       product: product ?? this.product,
       quantity: quantity ?? this.quantity,
       createdAt: createdAt ?? this.createdAt,
+      productName: productName ?? _productName,
+      productImage: productImage ?? _productImage,
+      price: price ?? _price,
+      subtotal: subtotal ?? _subtotal,
     );
   }
 
   @override
-  List<Object?> get props => [id, productId, product, quantity, createdAt];
+  List<Object?> get props => [
+    id,
+    productId,
+    product,
+    quantity,
+    createdAt,
+    _productName,
+    _productImage,
+    _price,
+    _subtotal,
+  ];
 }
 
 /// Cart model representing the entire cart

@@ -177,6 +177,7 @@ class ProductUpdate(BaseModel):
     qty: Optional[int] = None
     shades: Optional[List[str]] = None
     is_trending: Optional[bool] = None
+    is_active: Optional[bool] = None
 
 
 class ProductResponse(ProductBase):

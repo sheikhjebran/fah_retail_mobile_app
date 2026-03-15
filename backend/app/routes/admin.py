@@ -136,6 +136,7 @@ async def create_product(
         qty=request.qty,
         category_id=request.category_id,
         is_trending=request.is_trending,
+        shades=request.shades,
     )
     db.add(product)
     db.commit()
@@ -173,6 +174,8 @@ async def update_product(
         product.is_trending = request.is_trending
     if request.is_active is not None:
         product.is_active = request.is_active
+    if request.shades is not None:
+        product.shades = request.shades
 
     db.commit()
     db.refresh(product)

@@ -25,11 +25,19 @@ class CategoryModel extends Equatable {
 
   /// Create CategoryModel from JSON
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    // Helper to parse int from int or String
+    int? parseInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
     return CategoryModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      parentId: json['parent_id'] as int?,
-      image: (json['image_url'] ?? json['image']) as String?,
+      id: parseInt(json['id']) ?? 0,
+      name: json['name']?.toString() ?? '',
+      parentId: parseInt(json['parent_id']),
+      image: (json['image_url'] ?? json['image'])?.toString(),
       subcategories:
           json['subcategories'] != null
               ? (json['subcategories'] as List)

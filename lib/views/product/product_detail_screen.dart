@@ -6,6 +6,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/product_model.dart';
 import '../../presenters/product_presenter.dart';
 import '../../presenters/cart_presenter.dart';
+import '../dashboard/dashboard_screen.dart';
 
 /// Product detail screen with images carousel
 class ProductDetailScreen extends StatefulWidget {
@@ -71,8 +72,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             action: SnackBarAction(
               label: 'VIEW CART',
               onPressed: () {
-                // Navigate to cart
-                Navigator.pop(context);
+                // Navigate to cart tab in dashboard
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const DashboardScreen(initialIndex: 2),
+                  ),
+                  (route) => false,
+                );
               },
             ),
           ),

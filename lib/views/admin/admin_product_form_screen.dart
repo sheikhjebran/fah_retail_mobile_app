@@ -108,11 +108,13 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       }
 
       // Load shades as colors
-      if (product.shades != null) {
+      if (product.shades != null && product.shades!.isNotEmpty) {
         _selectedColors =
             product.shades!.map((hex) {
               try {
-                return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+                // Handle both with and without # prefix
+                final cleanHex = hex.startsWith('#') ? hex : '#$hex';
+                return Color(int.parse(cleanHex.replaceFirst('#', '0xFF')));
               } catch (_) {
                 return Colors.grey;
               }
