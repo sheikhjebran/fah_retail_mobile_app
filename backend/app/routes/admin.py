@@ -133,7 +133,7 @@ async def create_product(
         description=request.description,
         price=request.price,
         discount_price=request.discount_price,
-        stock=request.stock,
+        qty=request.qty,
         category_id=request.category_id,
         is_trending=request.is_trending,
     )
@@ -165,8 +165,8 @@ async def update_product(
         product.price = request.price
     if request.discount_price is not None:
         product.discount_price = request.discount_price
-    if request.stock is not None:
-        product.stock = request.stock
+    if request.qty is not None:
+        product.qty = request.qty
     if request.category_id is not None:
         product.category_id = request.category_id
     if request.is_trending is not None:
