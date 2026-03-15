@@ -232,144 +232,215 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder:
-          (ctx) => DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            maxChildSize: 0.9,
-            minChildSize: 0.4,
-            expand: false,
-            builder:
-                (_, controller) => Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Select Shades',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              maxChildSize: 0.9,
+              minChildSize: 0.5,
+              expand: false,
+              builder:
+                  (_, controller) => Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Select Colors/Shades',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.pop(ctx),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Tap to add shade, or enter custom shade below',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: GridView.builder(
-                          controller: controller,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                childAspectRatio: 1,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                              ),
-                          itemCount: _predefinedShades.length,
-                          itemBuilder: (context, index) {
-                            final shade = _predefinedShades[index];
-                            final isSelected = _shades.contains(shade['name']);
-                            return GestureDetector(
-                              onTap: () {
-                                if (!isSelected) {
-                                  _addShade(shade['name']);
-                                }
-                                Navigator.pop(ctx);
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: shade['color'],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        isSelected
-                                            ? AppColors.primary
-                                            : AppColors.border,
-                                    width: isSelected ? 3 : 1,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.shadow.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (isSelected)
-                                      const Icon(
-                                        Icons.check_circle,
-                                        color: AppColors.primary,
-                                        size: 20,
-                                      ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      shade['name'],
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            shade['color'] ==
-                                                    const Color(0xFF000000)
-                                                ? Colors.white
-                                                : Colors.black87,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text(
+                                'Done',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
-                            );
-                          },
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _shadeController,
-                              decoration: InputDecoration(
-                                hintText: 'Enter custom shade name',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tap colors to select/deselect. ${_shades.length} selected',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: GridView.builder(
+                            controller: controller,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  childAspectRatio: 0.85,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                            itemCount: _predefinedShades.length,
+                            itemBuilder: (context, index) {
+                              final shade = _predefinedShades[index];
+                              final isSelected = _shades.contains(
+                                shade['name'],
+                              );
+                              final isDark = _isColorDark(
+                                shade['color'] as Color,
+                              );
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setModalState(() {
+                                    if (isSelected) {
+                                      _shades.remove(shade['name']);
+                                    } else {
+                                      _shades.add(shade['name']);
+                                    }
+                                  });
+                                  setState(() {}); // Update parent state
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  decoration: BoxDecoration(
+                                    color: shade['color'],
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          isSelected
+                                              ? AppColors.primary
+                                              : AppColors.border,
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                    boxShadow:
+                                        isSelected
+                                            ? [
+                                              BoxShadow(
+                                                color: (shade['color'] as Color)
+                                                    .withValues(alpha: 0.4),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                            : null,
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      if (isSelected)
+                                        Positioned(
+                                          top: 4,
+                                          right: 4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.primary,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.check,
+                                              color: Colors.white,
+                                              size: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4),
+                                          child: Text(
+                                            shade['name'],
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  isDark
+                                                      ? Colors.white
+                                                      : Colors.black87,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Or add custom color:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _shadeController,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter custom shade name',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                ),
+                                textCapitalization: TextCapitalization.words,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              _addShade(_shadeController.text);
-                              Navigator.pop(ctx);
-                            },
-                            child: const Text('Add'),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (_shadeController.text.trim().isNotEmpty) {
+                                  final customShade =
+                                      _shadeController.text.trim();
+                                  if (!_shades.contains(customShade)) {
+                                    setModalState(() {
+                                      _shades.add(customShade);
+                                    });
+                                    setState(() {});
+                                    _shadeController.clear();
+                                  } else {
+                                    Helpers.showError(
+                                      ctx,
+                                      'Shade already added',
+                                    );
+                                  }
+                                }
+                              },
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Add'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-          ),
+            );
+          },
+        );
+      },
     );
+  }
+
+  bool _isColorDark(Color color) {
+    final luminance = color.computeLuminance();
+    return luminance < 0.5;
   }
 
   Future<void> _saveProduct() async {
