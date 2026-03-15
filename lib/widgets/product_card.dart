@@ -51,9 +51,9 @@ class ProductCard extends StatelessWidget {
                     child: SizedBox(
                       width: double.infinity,
                       child:
-                          product.primaryImage != null
+                          product.displayImage != null
                               ? CachedNetworkImage(
-                                imageUrl: product.primaryImage!,
+                                imageUrl: product.displayImage!,
                                 fit: BoxFit.cover,
                                 placeholder:
                                     (context, url) =>

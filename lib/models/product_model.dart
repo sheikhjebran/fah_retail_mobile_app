@@ -54,6 +54,19 @@ class ProductModel extends Equatable {
   /// Get category name (convenience getter)
   String? get categoryName => category?.name;
 
+  /// Get display image (fallback to first image from images array if primary is null)
+  String? get displayImage {
+    if (primaryImage != null) return primaryImage;
+    if (images != null && images!.isNotEmpty) {
+      // Find primary image first
+      final primary = images!.where((img) => img.isPrimary).firstOrNull;
+      if (primary != null) return primary.imageUrl;
+      // Otherwise return first image
+      return images!.first.imageUrl;
+    }
+    return null;
+  }
+
   /// Check if product has multiple images
   bool get hasMultipleImages => images != null && images!.length > 1;
 

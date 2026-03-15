@@ -82,14 +82,37 @@ class DashboardStatsModel extends Equatable {
   List<dynamic> get recentOrders => [];
 
   factory DashboardStatsModel.fromJson(Map<String, dynamic> json) {
+    // Parse orders_by_status map
+    final ordersByStatus = json['orders_by_status'] as Map<String, dynamic>?;
+
+    // Helper to safely parse number
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      return 0.0;
+    }
+
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return 0;
+    }
+
     return DashboardStatsModel(
-      todaySales: (json['today_sales'] as num).toDouble(),
-      totalOrders: json['total_orders'] as int,
-      pendingOrders: json['pending_orders'] as int,
-      deliveredOrders: json['delivered_orders'] as int,
-      cancelledOrders: json['cancelled_orders'] as int,
-      totalProducts: json['total_products'] as int,
-      lowStockProducts: json['low_stock_products'] as int,
+      todaySales: parseDouble(json['today_sales'] ?? json['total_revenue']),
+      totalOrders: parseInt(json['total_orders']),
+      pendingOrders: parseInt(
+        json['pending_orders'] ?? ordersByStatus?['pending'],
+      ),
+      deliveredOrders: parseInt(
+        json['delivered_orders'] ?? ordersByStatus?['delivered'],
+      ),
+      cancelledOrders: parseInt(
+        json['cancelled_orders'] ?? ordersByStatus?['cancelled'],
+      ),
+      totalProducts: parseInt(json['total_products']),
+      lowStockProducts: parseInt(json['low_stock_products']),
       topSellingProducts:
           json['top_selling_products'] != null
               ? (json['top_selling_products'] as List)

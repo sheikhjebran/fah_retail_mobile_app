@@ -293,9 +293,9 @@ class _AdminProductCard extends StatelessWidget {
             width: 60,
             height: 60,
             child:
-                product.primaryImage != null
+                product.displayImage != null
                     ? CachedNetworkImage(
-                      imageUrl: product.primaryImage!,
+                      imageUrl: product.displayImage!,
                       fit: BoxFit.cover,
                       placeholder:
                           (context, url) =>
