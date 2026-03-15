@@ -86,12 +86,17 @@ async def get_admin_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
+    include_inactive: bool = Query(False),
     admin: User = Depends(get_admin_user),
     db: Session = Depends(get_db),
 ):
     """Get all products for admin."""
     # Base query for counting
     base_query = db.query(Product)
+
+    # By default, only show active products
+    if not include_inactive:
+        base_query = base_query.filter(Product.is_active == True)
 
     if search:
         base_query = base_query.filter(Product.name.ilike(f"%{search}%"))

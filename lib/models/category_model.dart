@@ -29,7 +29,7 @@ class CategoryModel extends Equatable {
       id: json['id'] as int,
       name: json['name'] as String,
       parentId: json['parent_id'] as int?,
-      image: json['image'] as String?,
+      image: (json['image_url'] ?? json['image']) as String?,
       subcategories:
           json['subcategories'] != null
               ? (json['subcategories'] as List)

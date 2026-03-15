@@ -1,13 +1,12 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/helpers.dart';
-import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../services/admin_service.dart';
-import '../../services/product_service.dart';
 
 /// Admin product form screen for adding/editing products
 class AdminProductFormScreen extends StatefulWidget {
@@ -23,7 +22,6 @@ class AdminProductFormScreen extends StatefulWidget {
 class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _adminService = AdminService();
-  final _productService = ProductService();
   final _imagePicker = ImagePicker();
 
   final _nameController = TextEditingController();
@@ -31,12 +29,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _priceController = TextEditingController();
   final _discountPriceController = TextEditingController();
   final _qtyController = TextEditingController();
-  final _shadeController = TextEditingController();
 
-  List<CategoryModel> _categories = [];
   int? _selectedCategoryId;
   bool _isTrending = false;
-  bool _isLoading = false;
   bool _isSaving = false;
 
   // Images - can add up to 5, one as primary
@@ -44,27 +39,28 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   List<String> _existingImageUrls = [];
   int _primaryImageIndex = 0;
 
-  // Shades/Colors
-  List<String> _shades = [];
+  // Shades/Colors - stores Color objects
+  List<Color> _selectedColors = [];
 
-  // Predefined shade colors for selection
-  final List<Map<String, dynamic>> _predefinedShades = [
-    {'name': 'Gold', 'color': const Color(0xFFFFD700)},
-    {'name': 'Silver', 'color': const Color(0xFFC0C0C0)},
-    {'name': 'Rose Gold', 'color': const Color(0xFFB76E79)},
-    {'name': 'Black', 'color': const Color(0xFF000000)},
-    {'name': 'White', 'color': const Color(0xFFFFFFFF)},
-    {'name': 'Red', 'color': const Color(0xFFE53935)},
-    {'name': 'Blue', 'color': const Color(0xFF1E88E5)},
-    {'name': 'Green', 'color': const Color(0xFF43A047)},
-    {'name': 'Pink', 'color': const Color(0xFFE91E63)},
-    {'name': 'Purple', 'color': const Color(0xFF8E24AA)},
-    {'name': 'Orange', 'color': const Color(0xFFFF9800)},
-    {'name': 'Brown', 'color': const Color(0xFF795548)},
-    {'name': 'Crystal', 'color': const Color(0xFFE0F7FA)},
-    {'name': 'Pearl', 'color': const Color(0xFFFAF0E6)},
-    {'name': 'Bronze', 'color': const Color(0xFFCD7F32)},
-    {'name': 'Copper', 'color': const Color(0xFFB87333)},
+  // Hardcoded categories
+  final List<Map<String, dynamic>> _hardcodedCategories = [
+    {'id': 1, 'name': 'Hair Band'},
+    {'id': 2, 'name': 'Hair Pins'},
+    {'id': 3, 'name': 'Saree Pins'},
+    {'id': 4, 'name': 'Clips'},
+    {'id': 5, 'name': 'Necklace'},
+    {'id': 6, 'name': 'Bracelet'},
+    {'id': 7, 'name': 'Rings'},
+    {'id': 8, 'name': 'Watches'},
+    {'id': 9, 'name': 'Fancy Mirror'},
+    {'id': 10, 'name': 'Earrings'},
+    {'id': 11, 'name': 'Earrings - Crystal'},
+    {'id': 12, 'name': 'Earrings - Long'},
+    {'id': 13, 'name': 'Earrings - Short'},
+    {'id': 14, 'name': 'Earrings - Round'},
+    {'id': 15, 'name': 'Earrings - Rose Gold'},
+    {'id': 16, 'name': 'Earrings - Silver Plated'},
+    {'id': 17, 'name': 'Earrings - Gold Plated'},
   ];
 
   bool get isEditing => widget.productId != null || widget.product != null;
@@ -74,7 +70,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCategories();
     _populateFormIfEditing();
   }
 
@@ -85,23 +80,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     _priceController.dispose();
     _discountPriceController.dispose();
     _qtyController.dispose();
-    _shadeController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadCategories() async {
-    setState(() => _isLoading = true);
-    try {
-      _categories = await _productService.getCategories();
-    } catch (e) {
-      if (mounted) {
-        Helpers.showError(context, 'Failed to load categories');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   void _populateFormIfEditing() {
@@ -128,9 +107,16 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         }
       }
 
-      // Load shades
+      // Load shades as colors
       if (product.shades != null) {
-        _shades = List<String>.from(product.shades!);
+        _selectedColors =
+            product.shades!.map((hex) {
+              try {
+                return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+              } catch (_) {
+                return Colors.grey;
+              }
+            }).toList();
       }
     }
   }
@@ -210,227 +196,109 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     });
   }
 
-  void _addShade(String shade) {
-    if (shade.trim().isEmpty) return;
-    if (_shades.contains(shade.trim())) {
-      Helpers.showError(context, 'Shade already added');
-      return;
-    }
+  void _removeColor(int index) {
     setState(() {
-      _shades.add(shade.trim());
-      _shadeController.clear();
+      _selectedColors.removeAt(index);
     });
   }
 
-  void _removeShade(int index) {
-    setState(() {
-      _shades.removeAt(index);
-    });
-  }
+  void _showColorPicker() {
+    Color pickerColor = Colors.red;
 
-  void _showShadeSelector() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return DraggableScrollableSheet(
-              initialChildSize: 0.7,
-              maxChildSize: 0.9,
-              minChildSize: 0.5,
-              expand: false,
-              builder:
-                  (_, controller) => Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Select Colors/Shades',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: const Text(
-                                'Done',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ],
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Pick a Color',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tap colors to select/deselect. ${_shades.length} selected',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: GridView.builder(
-                            controller: controller,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  childAspectRatio: 0.85,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                ),
-                            itemCount: _predefinedShades.length,
-                            itemBuilder: (context, index) {
-                              final shade = _predefinedShades[index];
-                              final isSelected = _shades.contains(
-                                shade['name'],
-                              );
-                              final isDark = _isColorDark(
-                                shade['color'] as Color,
-                              );
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
-                              return GestureDetector(
-                                onTap: () {
-                                  setModalState(() {
-                                    if (isSelected) {
-                                      _shades.remove(shade['name']);
-                                    } else {
-                                      _shades.add(shade['name']);
-                                    }
-                                  });
-                                  setState(() {}); // Update parent state
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(
-                                    color: shade['color'],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color:
-                                          isSelected
-                                              ? AppColors.primary
-                                              : AppColors.border,
-                                      width: isSelected ? 3 : 1,
-                                    ),
-                                    boxShadow:
-                                        isSelected
-                                            ? [
-                                              BoxShadow(
-                                                color: (shade['color'] as Color)
-                                                    .withValues(alpha: 0.4),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ]
-                                            : null,
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      if (isSelected)
-                                        Positioned(
-                                          top: 4,
-                                          right: 4,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(2),
-                                            decoration: const BoxDecoration(
-                                              color: AppColors.primary,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.check,
-                                              color: Colors.white,
-                                              size: 14,
-                                            ),
-                                          ),
-                                        ),
-                                      Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(4),
-                                          child: Text(
-                                            shade['name'],
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  isDark
-                                                      ? Colors.white
-                                                      : Colors.black87,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Or add custom color:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _shadeController,
-                                decoration: InputDecoration(
-                                  hintText: 'Enter custom shade name',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                textCapitalization: TextCapitalization.words,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                if (_shadeController.text.trim().isNotEmpty) {
-                                  final customShade =
-                                      _shadeController.text.trim();
-                                  if (!_shades.contains(customShade)) {
-                                    setModalState(() {
-                                      _shades.add(customShade);
-                                    });
-                                    setState(() {});
-                                    _shadeController.clear();
-                                  } else {
-                                    Helpers.showError(
-                                      ctx,
-                                      'Shade already added',
-                                    );
-                                  }
-                                }
-                              },
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Add'),
-                            ),
-                          ],
-                        ),
-                      ],
+                  // HSV Color Wheel
+                  Expanded(
+                    child: _HSVColorPicker(
+                      initialColor: pickerColor,
+                      onColorChanged: (color) {
+                        setModalState(() {
+                          pickerColor = color;
+                        });
+                      },
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // Selected color preview
+                  Container(
+                    height: 60,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: pickerColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '#${pickerColor.value.toRadixString(16).substring(2).toUpperCase()}',
+                        style: TextStyle(
+                          color:
+                              pickerColor.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Add button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedColors.add(pickerColor);
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add This Color'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -438,9 +306,8 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     );
   }
 
-  bool _isColorDark(Color color) {
-    final luminance = color.computeLuminance();
-    return luminance < 0.5;
+  String _colorToHex(Color color) {
+    return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
   }
 
   Future<void> _saveProduct() async {
@@ -465,6 +332,12 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               : null;
       final qty = int.parse(_qtyController.text.trim());
 
+      // Convert colors to hex strings
+      final shadeHexList =
+          _selectedColors.isNotEmpty
+              ? _selectedColors.map((c) => _colorToHex(c)).toList()
+              : null;
+
       int productId;
 
       if (isEditing) {
@@ -477,7 +350,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           price: price,
           discountPrice: discountPrice,
           qty: qty,
-          shades: _shades.isNotEmpty ? _shades : null,
+          shades: shadeHexList,
           isTrending: _isTrending,
         );
       } else {
@@ -488,7 +361,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           price: price,
           discountPrice: discountPrice,
           qty: qty,
-          shades: _shades.isNotEmpty ? _shades : null,
+          shades: shadeHexList,
           isTrending: _isTrending,
         );
         productId = product.id;
@@ -548,279 +421,264 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ==================== IMAGES SECTION ====================
-                      _buildLabel('Product Images (Max 5)'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Tap the star to set primary image',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildImageSection(),
-                      const SizedBox(height: 24),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ==================== IMAGES SECTION ====================
+              _buildLabel('Product Images (Max 5)'),
+              const SizedBox(height: 4),
+              Text(
+                'Tap the star to set primary image',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              _buildImageSection(),
+              const SizedBox(height: 24),
 
-                      // ==================== BASIC INFO ====================
-                      _buildLabel('Product Name *'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: _inputDecoration('Enter product name'),
-                        textCapitalization: TextCapitalization.words,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Product name is required';
-                          }
-                          if (value.trim().length < 3) {
-                            return 'Name must be at least 3 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
+              // ==================== BASIC INFO ====================
+              _buildLabel('Product Name *'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                decoration: _inputDecoration('Enter product name'),
+                textCapitalization: TextCapitalization.words,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Product name is required';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Name must be at least 3 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
 
-                      _buildLabel('Description'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: _inputDecoration(
-                          'Enter product description',
-                        ),
-                        maxLines: 3,
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
-                      const SizedBox(height: 20),
+              _buildLabel('Description'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: _inputDecoration('Enter product description'),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 20),
 
-                      // ==================== CATEGORY ====================
-                      _buildLabel('Category *'),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<int>(
-                        value: _selectedCategoryId,
-                        decoration: _inputDecoration('Select category'),
-                        items: _buildCategoryItems(),
-                        onChanged: (value) {
-                          setState(() => _selectedCategoryId = value);
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Please select a category';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
+              // ==================== CATEGORY ====================
+              _buildLabel('Category *'),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<int>(
+                initialValue: _selectedCategoryId,
+                decoration: _inputDecoration('Select category'),
+                hint: const Text('Select a category'),
+                isExpanded: true,
+                items:
+                    _hardcodedCategories.map((cat) {
+                      return DropdownMenuItem<int>(
+                        value: cat['id'] as int,
+                        child: Text(cat['name'] as String),
+                      );
+                    }).toList(),
+                onChanged: (value) {
+                  setState(() => _selectedCategoryId = value);
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a category';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
 
-                      // ==================== PRICING ====================
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildLabel('Price (₹) *'),
-                                const SizedBox(height: 8),
-                                TextFormField(
-                                  controller: _priceController,
-                                  decoration: _inputDecoration('0.00'),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d+\.?\d{0,2}'),
-                                    ),
-                                  ],
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Price required';
-                                    }
-                                    final price = double.tryParse(value.trim());
-                                    if (price == null || price <= 0) {
-                                      return 'Invalid';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
+              // ==================== PRICING ====================
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('Price (₹) *'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _priceController,
+                          decoration: _inputDecoration('0.00'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildLabel('Discount Price (₹)'),
-                                const SizedBox(height: 8),
-                                TextFormField(
-                                  controller: _discountPriceController,
-                                  decoration: _inputDecoration('0.00'),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d+\.?\d{0,2}'),
-                                    ),
-                                  ],
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return null;
-                                    }
-                                    final discountPrice = double.tryParse(
-                                      value.trim(),
-                                    );
-                                    if (discountPrice == null ||
-                                        discountPrice <= 0) {
-                                      return 'Invalid';
-                                    }
-                                    final price =
-                                        double.tryParse(
-                                          _priceController.text,
-                                        ) ??
-                                        0;
-                                    if (discountPrice >= price) {
-                                      return 'Must be < price';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // ==================== QUANTITY ====================
-                      _buildLabel('Quantity *'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _qtyController,
-                        decoration: _inputDecoration('Enter quantity'),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Quantity is required';
-                          }
-                          final qty = int.tryParse(value.trim());
-                          if (qty == null || qty < 0) {
-                            return 'Enter valid quantity';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // ==================== SHADES SECTION ====================
-                      _buildLabel('Shades / Colors'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Add available color options for this product',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildShadesSection(),
-                      const SizedBox(height: 24),
-
-                      // ==================== TRENDING TOGGLE ====================
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Mark as Trending',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Show in trending products section',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Switch(
-                              value: _isTrending,
-                              onChanged: (value) {
-                                setState(() => _isTrending = value);
-                              },
-                              activeThumbColor: AppColors.primary,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+\.?\d{0,2}'),
                             ),
                           ],
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Price required';
+                            }
+                            final price = double.tryParse(value.trim());
+                            if (price == null || price <= 0) {
+                              return 'Invalid';
+                            }
+                            return null;
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // ==================== SAVE BUTTON ====================
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isSaving ? null : _saveProduct,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child:
-                              _isSaving
-                                  ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                  : Text(
-                                    isEditing
-                                        ? 'Update Product'
-                                        : 'Add Product',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('Discount Price (₹)'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _discountPriceController,
+                          decoration: _inputDecoration('0.00'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+\.?\d{0,2}'),
+                            ),
+                          ],
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null;
+                            }
+                            final discountPrice = double.tryParse(value.trim());
+                            if (discountPrice == null || discountPrice <= 0) {
+                              return 'Invalid';
+                            }
+                            final price =
+                                double.tryParse(_priceController.text) ?? 0;
+                            if (discountPrice >= price) {
+                              return 'Must be < price';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // ==================== QUANTITY ====================
+              _buildLabel('Quantity *'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _qtyController,
+                decoration: _inputDecoration('Enter quantity'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Quantity is required';
+                  }
+                  final qty = int.tryParse(value.trim());
+                  if (qty == null || qty < 0) {
+                    return 'Enter valid quantity';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+
+              // ==================== SHADES SECTION ====================
+              _buildLabel('Shades / Colors'),
+              const SizedBox(height: 4),
+              Text(
+                'Add available color options for this product',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              _buildShadesSection(),
+              const SizedBox(height: 24),
+
+              // ==================== TRENDING TOGGLE ====================
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Mark as Trending',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Show in trending products section',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: _isTrending,
+                      onChanged: (value) {
+                        setState(() => _isTrending = value);
+                      },
+                      activeThumbColor: AppColors.primary,
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 32),
+
+              // ==================== SAVE BUTTON ====================
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _saveProduct,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Text(
+                            isEditing ? 'Update Product' : 'Add Product',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -987,10 +845,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
   Widget _buildShadesSection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Add shade button
+        // Add color button
         GestureDetector(
-          onTap: _showShadeSelector,
+          onTap: _showColorPicker,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -1002,10 +861,10 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.palette, color: AppColors.primary),
+                Icon(Icons.color_lens, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  'Add Shade / Color',
+                  'Pick a Color',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
@@ -1016,37 +875,64 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           ),
         ),
 
-        // Selected shades
-        if (_shades.isNotEmpty) ...[
-          const SizedBox(height: 12),
+        // Selected colors display
+        if (_selectedColors.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            '${_selectedColors.length} color(s) selected:',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children:
-                _shades.asMap().entries.map((entry) {
+                _selectedColors.asMap().entries.map((entry) {
                   final index = entry.key;
-                  final shade = entry.value;
-                  final predefined = _predefinedShades.firstWhere(
-                    (s) => s['name'] == shade,
-                    orElse: () => {'name': shade, 'color': AppColors.primary},
-                  );
+                  final color = entry.value;
 
-                  return Chip(
-                    avatar: Container(
-                      width: 20,
-                      height: 20,
+                  return GestureDetector(
+                    onTap: () => _removeColor(index),
+                    child: Container(
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
-                        color: predefined['color'],
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border),
+                        color: color,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.border, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                          shadows: [
+                            Shadow(blurRadius: 2, color: Colors.black54),
+                          ],
+                        ),
                       ),
                     ),
-                    label: Text(shade),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () => _removeShade(index),
-                    backgroundColor: AppColors.surface,
                   );
                 }).toList(),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap a color to remove it',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ],
@@ -1088,38 +974,317 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
+}
 
-  List<DropdownMenuItem<int>> _buildCategoryItems() {
-    final items = <DropdownMenuItem<int>>[];
+/// HSV Color Picker Widget - Classic circular color wheel
+class _HSVColorPicker extends StatefulWidget {
+  final Color initialColor;
+  final ValueChanged<Color> onColorChanged;
 
-    for (final category in _categories) {
-      // Add parent category
-      items.add(
-        DropdownMenuItem(
-          value: category.id,
-          child: Text(
-            category.name,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+  const _HSVColorPicker({
+    required this.initialColor,
+    required this.onColorChanged,
+  });
+
+  @override
+  State<_HSVColorPicker> createState() => _HSVColorPickerState();
+}
+
+class _HSVColorPickerState extends State<_HSVColorPicker> {
+  late HSVColor _hsvColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _hsvColor = HSVColor.fromColor(widget.initialColor);
+  }
+
+  void _updateColor(HSVColor color) {
+    setState(() {
+      _hsvColor = color;
+    });
+    widget.onColorChanged(color.toColor());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Circular Hue Wheel
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final size =
+                  constraints.maxWidth < constraints.maxHeight
+                      ? constraints.maxWidth
+                      : constraints.maxHeight;
+              return Center(
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Hue ring
+                      _HueRing(
+                        hue: _hsvColor.hue,
+                        size: size,
+                        onHueChanged: (hue) {
+                          _updateColor(_hsvColor.withHue(hue));
+                        },
+                      ),
+                      // Saturation/Value square in center
+                      SizedBox(
+                        width: size * 0.55,
+                        height: size * 0.55,
+                        child: _SaturationValueBox(
+                          hsvColor: _hsvColor,
+                          onChanged: _updateColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
-      );
 
-      // Add subcategories
-      if (category.subcategories != null) {
-        for (final subcategory in category.subcategories!) {
-          items.add(
-            DropdownMenuItem(
-              value: subcategory.id,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Text('• ${subcategory.name}'),
+        const SizedBox(height: 16),
+
+        // Brightness slider
+        Row(
+          children: [
+            const Icon(Icons.brightness_6, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 12,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 10,
+                  ),
+                ),
+                child: Slider(
+                  value: _hsvColor.value,
+                  onChanged: (value) {
+                    _updateColor(_hsvColor.withValue(value));
+                  },
+                  activeColor: _hsvColor.toColor(),
+                ),
               ),
             ),
-          );
-        }
-      }
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Hue Ring Widget
+class _HueRing extends StatelessWidget {
+  final double hue;
+  final double size;
+  final ValueChanged<double> onHueChanged;
+
+  const _HueRing({
+    required this.hue,
+    required this.size,
+    required this.onHueChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanStart: (details) => _handleTouch(details.localPosition),
+      onPanUpdate: (details) => _handleTouch(details.localPosition),
+      onTapDown: (details) => _handleTouch(details.localPosition),
+      child: CustomPaint(
+        size: Size(size, size),
+        painter: _HueRingPainter(hue: hue),
+      ),
+    );
+  }
+
+  void _handleTouch(Offset position) {
+    final center = Offset(size / 2, size / 2);
+    final dx = position.dx - center.dx;
+    final dy = position.dy - center.dy;
+
+    // Calculate angle using atan2
+    final angle = math.atan2(dy, dx);
+
+    // Convert angle to hue (0-360)
+    var hue = (angle * 180 / math.pi + 90) % 360;
+    if (hue < 0) hue += 360;
+
+    onHueChanged(hue);
+  }
+}
+
+class _HueRingPainter extends CustomPainter {
+  final double hue;
+
+  _HueRingPainter({required this.hue});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final ringWidth = size.width * 0.12;
+
+    // Draw hue ring
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = ringWidth;
+
+    for (var i = 0; i < 360; i++) {
+      paint.color = HSVColor.fromAHSV(1, i.toDouble(), 1, 1).toColor();
+      final startAngle = (i - 90) * math.pi / 180;
+      final sweepAngle = 1.5 * math.pi / 180;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - ringWidth / 2),
+        startAngle,
+        sweepAngle,
+        false,
+        paint,
+      );
     }
 
-    return items;
+    // Draw selection indicator
+    final indicatorRadius = radius - ringWidth / 2;
+    final rad = (hue - 90) * math.pi / 180;
+    final indicatorPos = Offset(
+      center.dx + indicatorRadius * math.cos(rad),
+      center.dy + indicatorRadius * math.sin(rad),
+    );
+
+    // White circle indicator with border
+    canvas.drawCircle(
+      indicatorPos,
+      ringWidth / 2 + 2,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      indicatorPos,
+      ringWidth / 2 + 2,
+      Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    canvas.drawCircle(
+      indicatorPos,
+      ringWidth / 2 - 2,
+      Paint()
+        ..color = HSVColor.fromAHSV(1, hue, 1, 1).toColor()
+        ..style = PaintingStyle.fill,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _HueRingPainter oldDelegate) {
+    return oldDelegate.hue != hue;
+  }
+}
+
+/// Saturation/Value selection box
+class _SaturationValueBox extends StatelessWidget {
+  final HSVColor hsvColor;
+  final ValueChanged<HSVColor> onChanged;
+
+  const _SaturationValueBox({required this.hsvColor, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GestureDetector(
+          onPanStart:
+              (details) => _handleTouch(details.localPosition, constraints),
+          onPanUpdate:
+              (details) => _handleTouch(details.localPosition, constraints),
+          child: CustomPaint(
+            size: Size(constraints.maxWidth, constraints.maxHeight),
+            painter: _SaturationValuePainter(hsvColor: hsvColor),
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleTouch(Offset position, BoxConstraints constraints) {
+    final saturation = (position.dx / constraints.maxWidth).clamp(0.0, 1.0);
+    final value = 1 - (position.dy / constraints.maxHeight).clamp(0.0, 1.0);
+    onChanged(hsvColor.withSaturation(saturation).withValue(value));
+  }
+}
+
+class _SaturationValuePainter extends CustomPainter {
+  final HSVColor hsvColor;
+
+  _SaturationValuePainter({required this.hsvColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+
+    // Draw saturation gradient (white to hue color)
+    final saturationGradient = LinearGradient(
+      colors: [
+        Colors.white,
+        HSVColor.fromAHSV(1, hsvColor.hue, 1, 1).toColor(),
+      ],
+    );
+    canvas.drawRect(
+      rect,
+      Paint()..shader = saturationGradient.createShader(rect),
+    );
+
+    // Draw value gradient (transparent to black)
+    final valueGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [Colors.transparent, Colors.black],
+    );
+    canvas.drawRect(rect, Paint()..shader = valueGradient.createShader(rect));
+
+    // Draw border
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.grey.shade300
+        ..strokeWidth = 1,
+    );
+
+    // Draw selection indicator
+    final indicatorX = hsvColor.saturation * size.width;
+    final indicatorY = (1 - hsvColor.value) * size.height;
+
+    canvas.drawCircle(
+      Offset(indicatorX, indicatorY),
+      10,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+    canvas.drawCircle(
+      Offset(indicatorX, indicatorY),
+      10,
+      Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SaturationValuePainter oldDelegate) {
+    return oldDelegate.hsvColor != hsvColor;
   }
 }
