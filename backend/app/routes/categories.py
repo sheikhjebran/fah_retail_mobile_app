@@ -25,7 +25,6 @@ async def get_categories(db: Session = Depends(get_db)):
         return {
             "id": cat.id,
             "name": cat.name,
-            "slug": cat.slug,
             "image_url": cat.image_url,
             "parent_id": cat.parent_id,
             "subcategories": [category_to_dict(sub) for sub in cat.subcategories if sub.is_active],
@@ -49,14 +48,12 @@ async def get_category(category_id: int, db: Session = Depends(get_db)):
     return {
         "id": category.id,
         "name": category.name,
-        "slug": category.slug,
         "image_url": category.image_url,
         "parent_id": category.parent_id,
         "subcategories": [
             {
                 "id": sub.id,
                 "name": sub.name,
-                "slug": sub.slug,
                 "image_url": sub.image_url,
             }
             for sub in category.subcategories if sub.is_active

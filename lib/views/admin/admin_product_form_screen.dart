@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/helpers.dart';
 import '../../models/category_model.dart';
@@ -22,12 +24,14 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _adminService = AdminService();
   final _productService = ProductService();
+  final _imagePicker = ImagePicker();
 
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _discountPriceController = TextEditingController();
   final _qtyController = TextEditingController();
+  final _shadeController = TextEditingController();
 
   List<CategoryModel> _categories = [];
   int? _selectedCategoryId;
@@ -35,7 +39,37 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   bool _isLoading = false;
   bool _isSaving = false;
 
+  // Images - can add up to 5, one as primary
+  final List<XFile> _newImages = [];
+  List<String> _existingImageUrls = [];
+  int _primaryImageIndex = 0;
+
+  // Shades/Colors
+  List<String> _shades = [];
+
+  // Predefined shade colors for selection
+  final List<Map<String, dynamic>> _predefinedShades = [
+    {'name': 'Gold', 'color': const Color(0xFFFFD700)},
+    {'name': 'Silver', 'color': const Color(0xFFC0C0C0)},
+    {'name': 'Rose Gold', 'color': const Color(0xFFB76E79)},
+    {'name': 'Black', 'color': const Color(0xFF000000)},
+    {'name': 'White', 'color': const Color(0xFFFFFFFF)},
+    {'name': 'Red', 'color': const Color(0xFFE53935)},
+    {'name': 'Blue', 'color': const Color(0xFF1E88E5)},
+    {'name': 'Green', 'color': const Color(0xFF43A047)},
+    {'name': 'Pink', 'color': const Color(0xFFE91E63)},
+    {'name': 'Purple', 'color': const Color(0xFF8E24AA)},
+    {'name': 'Orange', 'color': const Color(0xFFFF9800)},
+    {'name': 'Brown', 'color': const Color(0xFF795548)},
+    {'name': 'Crystal', 'color': const Color(0xFFE0F7FA)},
+    {'name': 'Pearl', 'color': const Color(0xFFFAF0E6)},
+    {'name': 'Bronze', 'color': const Color(0xFFCD7F32)},
+    {'name': 'Copper', 'color': const Color(0xFFB87333)},
+  ];
+
   bool get isEditing => widget.productId != null || widget.product != null;
+
+  int get totalImages => _newImages.length + _existingImageUrls.length;
 
   @override
   void initState() {
@@ -51,6 +85,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     _priceController.dispose();
     _discountPriceController.dispose();
     _qtyController.dispose();
+    _shadeController.dispose();
     super.dispose();
   }
 
@@ -81,7 +116,260 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       _qtyController.text = product.qty.toString();
       _selectedCategoryId = product.categoryId;
       _isTrending = product.isTrending;
+
+      // Load existing images
+      if (product.images != null) {
+        _existingImageUrls =
+            product.images!.map((img) => img.imageUrl).toList();
+        // Find primary image index
+        final primaryIndex = product.images!.indexWhere((img) => img.isPrimary);
+        if (primaryIndex >= 0) {
+          _primaryImageIndex = primaryIndex;
+        }
+      }
+
+      // Load shades
+      if (product.shades != null) {
+        _shades = List<String>.from(product.shades!);
+      }
     }
+  }
+
+  Future<void> _pickImages() async {
+    if (totalImages >= 5) {
+      Helpers.showError(context, 'Maximum 5 images allowed');
+      return;
+    }
+
+    final remainingSlots = 5 - totalImages;
+
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (ctx) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Choose from Gallery'),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final images = await _imagePicker.pickMultiImage(
+                      imageQuality: 80,
+                      maxWidth: 1200,
+                    );
+                    if (images.isNotEmpty) {
+                      final toAdd = images.take(remainingSlots).toList();
+                      setState(() {
+                        _newImages.addAll(toAdd);
+                      });
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Take a Photo'),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final image = await _imagePicker.pickImage(
+                      source: ImageSource.camera,
+                      imageQuality: 80,
+                      maxWidth: 1200,
+                    );
+                    if (image != null) {
+                      setState(() {
+                        _newImages.add(image);
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  void _removeImage(int index, bool isExisting) {
+    setState(() {
+      if (isExisting) {
+        _existingImageUrls.removeAt(index);
+      } else {
+        final adjustedIndex = index - _existingImageUrls.length;
+        _newImages.removeAt(adjustedIndex);
+      }
+      // Adjust primary index if needed
+      if (_primaryImageIndex >= totalImages) {
+        _primaryImageIndex = totalImages > 0 ? 0 : 0;
+      }
+    });
+  }
+
+  void _setPrimaryImage(int index) {
+    setState(() {
+      _primaryImageIndex = index;
+    });
+  }
+
+  void _addShade(String shade) {
+    if (shade.trim().isEmpty) return;
+    if (_shades.contains(shade.trim())) {
+      Helpers.showError(context, 'Shade already added');
+      return;
+    }
+    setState(() {
+      _shades.add(shade.trim());
+      _shadeController.clear();
+    });
+  }
+
+  void _removeShade(int index) {
+    setState(() {
+      _shades.removeAt(index);
+    });
+  }
+
+  void _showShadeSelector() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder:
+          (ctx) => DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            maxChildSize: 0.9,
+            minChildSize: 0.4,
+            expand: false,
+            builder:
+                (_, controller) => Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Select Shades',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Tap to add shade, or enter custom shade below',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: GridView.builder(
+                          controller: controller,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                childAspectRatio: 1,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                          itemCount: _predefinedShades.length,
+                          itemBuilder: (context, index) {
+                            final shade = _predefinedShades[index];
+                            final isSelected = _shades.contains(shade['name']);
+                            return GestureDetector(
+                              onTap: () {
+                                if (!isSelected) {
+                                  _addShade(shade['name']);
+                                }
+                                Navigator.pop(ctx);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: shade['color'],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? AppColors.primary
+                                            : AppColors.border,
+                                    width: isSelected ? 3 : 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.shadow.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (isSelected)
+                                      const Icon(
+                                        Icons.check_circle,
+                                        color: AppColors.primary,
+                                        size: 20,
+                                      ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      shade['name'],
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            shade['color'] ==
+                                                    const Color(0xFF000000)
+                                                ? Colors.white
+                                                : Colors.black87,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _shadeController,
+                              decoration: InputDecoration(
+                                hintText: 'Enter custom shade name',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              _addShade(_shadeController.text);
+                              Navigator.pop(ctx);
+                            },
+                            child: const Text('Add'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+          ),
+    );
   }
 
   Future<void> _saveProduct() async {
@@ -106,35 +394,49 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               : null;
       final qty = int.parse(_qtyController.text.trim());
 
+      int productId;
+
       if (isEditing) {
+        productId = widget.productId ?? widget.product!.id;
         await _adminService.updateProduct(
-          widget.productId ?? widget.product!.id,
+          productId,
           name: name,
           description: description,
           categoryId: _selectedCategoryId,
           price: price,
           discountPrice: discountPrice,
           qty: qty,
+          shades: _shades.isNotEmpty ? _shades : null,
           isTrending: _isTrending,
         );
-        if (mounted) {
-          Helpers.showSuccess(context, 'Product updated successfully');
-          Navigator.pop(context, true);
-        }
       } else {
-        await _adminService.addProduct(
+        final product = await _adminService.addProduct(
           name: name,
           description: description,
           categoryId: _selectedCategoryId!,
           price: price,
           discountPrice: discountPrice,
           qty: qty,
+          shades: _shades.isNotEmpty ? _shades : null,
           isTrending: _isTrending,
         );
-        if (mounted) {
-          Helpers.showSuccess(context, 'Product added successfully');
-          Navigator.pop(context, true);
-        }
+        productId = product.id;
+      }
+
+      // Upload new images if any
+      if (_newImages.isNotEmpty) {
+        final imagePaths = _newImages.map((img) => img.path).toList();
+        await _adminService.uploadProductImages(productId, imagePaths);
+      }
+
+      if (mounted) {
+        Helpers.showSuccess(
+          context,
+          isEditing
+              ? 'Product updated successfully'
+              : 'Product added successfully',
+        );
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -185,7 +487,21 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Product Name
+                      // ==================== IMAGES SECTION ====================
+                      _buildLabel('Product Images (Max 5)'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap the star to set primary image',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildImageSection(),
+                      const SizedBox(height: 24),
+
+                      // ==================== BASIC INFO ====================
                       _buildLabel('Product Name *'),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -204,7 +520,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Description
                       _buildLabel('Description'),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -217,11 +532,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Category
+                      // ==================== CATEGORY ====================
                       _buildLabel('Category *'),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
-                        initialValue: _selectedCategoryId,
+                        value: _selectedCategoryId,
                         decoration: _inputDecoration('Select category'),
                         items: _buildCategoryItems(),
                         onChanged: (value) {
@@ -236,7 +551,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Price Row
+                      // ==================== PRICING ====================
                       Row(
                         children: [
                           Expanded(
@@ -259,11 +574,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                                   ],
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return 'Price is required';
+                                      return 'Price required';
                                     }
                                     final price = double.tryParse(value.trim());
                                     if (price == null || price <= 0) {
-                                      return 'Enter valid price';
+                                      return 'Invalid';
                                     }
                                     return null;
                                   },
@@ -299,7 +614,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                                     );
                                     if (discountPrice == null ||
                                         discountPrice <= 0) {
-                                      return 'Enter valid price';
+                                      return 'Invalid';
                                     }
                                     final price =
                                         double.tryParse(
@@ -307,7 +622,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                                         ) ??
                                         0;
                                     if (discountPrice >= price) {
-                                      return 'Must be less than price';
+                                      return 'Must be < price';
                                     }
                                     return null;
                                   },
@@ -319,7 +634,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Quantity
+                      // ==================== QUANTITY ====================
                       _buildLabel('Quantity *'),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -340,9 +655,23 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                      // Trending Switch
+                      // ==================== SHADES SECTION ====================
+                      _buildLabel('Shades / Colors'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Add available color options for this product',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildShadesSection(),
+                      const SizedBox(height: 24),
+
+                      // ==================== TRENDING TOGGLE ====================
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -384,7 +713,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // Save Button
+                      // ==================== SAVE BUTTON ====================
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -421,6 +750,235 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   ),
                 ),
               ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      children: [
+        // Image Grid
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: totalImages + (totalImages < 5 ? 1 : 0),
+            itemBuilder: (context, index) {
+              // Add button
+              if (index == totalImages) {
+                return _buildAddImageButton();
+              }
+
+              // Existing or new image
+              final isExisting = index < _existingImageUrls.length;
+              final isPrimary = index == _primaryImageIndex;
+
+              return _buildImageTile(index, isExisting, isPrimary);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddImageButton() {
+    return GestureDetector(
+      onTap: _pickImages,
+      child: Container(
+        width: 100,
+        height: 100,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.primary,
+            width: 2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              size: 32,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Add Image',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageTile(int index, bool isExisting, bool isPrimary) {
+    return Container(
+      width: 100,
+      height: 100,
+      margin: const EdgeInsets.only(right: 12),
+      child: Stack(
+        children: [
+          // Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child:
+                isExisting
+                    ? Image.network(
+                      _existingImageUrls[index],
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (_, _, _) => Container(
+                            color: AppColors.surface,
+                            child: const Icon(Icons.image_not_supported),
+                          ),
+                    )
+                    : Image.file(
+                      File(_newImages[index - _existingImageUrls.length].path),
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+          ),
+
+          // Primary badge
+          if (isPrimary)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Primary',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+          // Set primary button
+          Positioned(
+            top: 4,
+            right: 28,
+            child: GestureDetector(
+              onTap: () => _setPrimaryImage(index),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: isPrimary ? AppColors.warning : Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isPrimary ? Icons.star : Icons.star_border,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
+            ),
+          ),
+
+          // Remove button
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () => _removeImage(index, isExisting),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShadesSection() {
+    return Column(
+      children: [
+        // Add shade button
+        GestureDetector(
+          onTap: _showShadeSelector,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.palette, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Add Shade / Color',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Selected shades
+        if (_shades.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                _shades.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final shade = entry.value;
+                  final predefined = _predefinedShades.firstWhere(
+                    (s) => s['name'] == shade,
+                    orElse: () => {'name': shade, 'color': AppColors.primary},
+                  );
+
+                  return Chip(
+                    avatar: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: predefined['color'],
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border),
+                      ),
+                    ),
+                    label: Text(shade),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => _removeShade(index),
+                    backgroundColor: AppColors.surface,
+                  );
+                }).toList(),
+          ),
+        ],
+      ],
     );
   }
 

@@ -176,7 +176,7 @@ class AdminService {
       for (int i = 0; i < imagePaths.length; i++) {
         formData.files.add(
           MapEntry(
-            'images',
+            'files',
             await MultipartFile.fromFile(
               imagePaths[i],
               filename: 'image_$i.jpg',
@@ -185,18 +185,14 @@ class AdminService {
         );
       }
 
-      if (primaryIndex != null) {
-        formData.fields.add(MapEntry('primary_index', primaryIndex.toString()));
-      }
-
       final response = await _apiClient.uploadFile(
-        '${ApiEndpoints.adminEditProduct(productId)}/images',
+        '${ApiEndpoints.adminEditProduct(productId)}/upload-images',
         formData: formData,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final List<dynamic> data = response.data;
-        return data
+        final List<dynamic> images = response.data['images'] ?? [];
+        return images
             .map((e) => ProductImageModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }

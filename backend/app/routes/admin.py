@@ -3,7 +3,7 @@ Admin route handlers.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models import User, Product, ProductImage, Category, Order, OrderItem, OrderStatusHistory, OrderStatus, UserRole
 from app.schemas import ProductCreate, ProductUpdate, OrderStatusUpdate, DashboardStatsResponse
 from app.utils.auth import get_admin_user
+from app.utils.cloudinary import upload_image, upload_multiple_images, delete_image
 from app.routes.products import product_to_response
 from app.routes.orders import order_to_response
 
@@ -227,6 +228,94 @@ async def add_product_image(
     db.commit()
 
     return {"success": True, "message": "Image added"}
+
+
+@router.post("/products/{product_id}/upload-images")
+async def upload_product_images(
+    product_id: int,
+    files: List[UploadFile] = File(...),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Upload images to Cloudinary and add to product."""
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Upload images to Cloudinary
+    uploaded_images = await upload_multiple_images(files, folder=f"products/{product_id}")
+
+    # Get current max sort order
+    max_order = db.query(func.max(ProductImage.sort_order)).filter(
+        ProductImage.product_id == product_id,
+    ).scalar() or 0
+
+    # Check if product has any images (first one will be primary)
+    has_images = db.query(ProductImage).filter(
+        ProductImage.product_id == product_id,
+    ).count() > 0
+
+    created_images = []
+    for i, img_data in enumerate(uploaded_images):
+        is_primary = not has_images and i == 0
+        
+        image = ProductImage(
+            product_id=product_id,
+            image_url=img_data["url"],
+            is_primary=is_primary,
+            sort_order=max_order + i + 1,
+        )
+        db.add(image)
+        db.flush()
+        
+        created_images.append({
+            "id": image.id,
+            "image_url": image.image_url,
+            "is_primary": image.is_primary,
+            "sort_order": image.sort_order,
+        })
+    
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Uploaded {len(created_images)} images",
+        "images": created_images,
+    }
+
+
+@router.delete("/products/{product_id}/images/{image_id}")
+async def delete_product_image(
+    product_id: int,
+    image_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a product image."""
+    image = db.query(ProductImage).filter(
+        ProductImage.id == image_id,
+        ProductImage.product_id == product_id,
+    ).first()
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # Try to delete from Cloudinary (extract public_id from URL if possible)
+    if "cloudinary.com" in image.image_url:
+        try:
+            # Extract public_id from URL
+            parts = image.image_url.split("/upload/")
+            if len(parts) == 2:
+                public_id = parts[1].rsplit(".", 1)[0]  # Remove extension
+                delete_image(public_id)
+        except Exception:
+            pass  # Continue even if Cloudinary delete fails
+
+    db.delete(image)
+    db.commit()
+
+    return {"success": True, "message": "Image deleted"}
 
 
 # ============ Order Management ============
