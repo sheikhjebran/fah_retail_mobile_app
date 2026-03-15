@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/helpers.dart';
 import '../../models/product_model.dart';
 import '../../models/category_model.dart';
 import '../../presenters/product_presenter.dart';
+import '../../presenters/cart_presenter.dart';
 import '../../widgets/product_card.dart';
 import 'product_detail_screen.dart';
 
@@ -20,6 +22,7 @@ class ProductListScreen extends StatefulWidget {
 class _ProductListScreenState extends State<ProductListScreen>
     implements ProductListView {
   final _presenter = ProductPresenter();
+  final _cartPresenter = CartPresenter();
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
 
@@ -28,6 +31,7 @@ class _ProductListScreenState extends State<ProductListScreen>
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
+  final Set<int> _addingToCart = {};
 
   ProductFilter _filter = const ProductFilter();
   ProductSortOption _sortOption = ProductSortOption.newest;
@@ -69,7 +73,8 @@ class _ProductListScreenState extends State<ProductListScreen>
   Future<void> _loadProducts() async {
     _filter = ProductFilter(
       categoryId: _selectedCategoryId,
-      searchQuery: _searchController.text.isNotEmpty ? _searchController.text : null,
+      searchQuery:
+          _searchController.text.isNotEmpty ? _searchController.text : null,
       sortOption: _sortOption,
     );
     await _presenter.loadProducts(filter: _filter, refresh: true);
@@ -93,23 +98,45 @@ class _ProductListScreenState extends State<ProductListScreen>
     );
   }
 
+  Future<void> _addToCart(ProductModel product) async {
+    if (_addingToCart.contains(product.id)) return;
+
+    setState(() => _addingToCart.add(product.id));
+
+    try {
+      await _cartPresenter.addToCart(product);
+      if (mounted) {
+        Helpers.showSuccess(context, '${product.name} added to cart');
+      }
+    } catch (e) {
+      if (mounted) {
+        Helpers.showError(context, 'Failed to add to cart: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _addingToCart.remove(product.id));
+      }
+    }
+  }
+
   void _showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _FilterBottomSheet(
-        categories: _categories,
-        selectedCategoryId: _selectedCategoryId,
-        sortOption: _sortOption,
-        onApply: (categoryId, sort) {
-          setState(() {
-            _selectedCategoryId = categoryId;
-            _sortOption = sort;
-          });
-          Navigator.pop(context);
-          _loadProducts();
-        },
-      ),
+      builder:
+          (context) => _FilterBottomSheet(
+            categories: _categories,
+            selectedCategoryId: _selectedCategoryId,
+            sortOption: _sortOption,
+            onApply: (categoryId, sort) {
+              setState(() {
+                _selectedCategoryId = categoryId;
+                _sortOption = sort;
+              });
+              Navigator.pop(context);
+              _loadProducts();
+            },
+          ),
     );
   }
 
@@ -147,9 +174,9 @@ class _ProductListScreenState extends State<ProductListScreen>
 
   @override
   void showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     setState(() {
       _isLoading = false;
       _isLoadingMore = false;
@@ -186,15 +213,16 @@ class _ProductListScreenState extends State<ProductListScreen>
               decoration: InputDecoration(
                 hintText: 'Search products...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _loadProducts();
-                        },
-                      )
-                    : null,
+                suffixIcon:
+                    _searchController.text.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _loadProducts();
+                          },
+                        )
+                        : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -221,12 +249,13 @@ class _ProductListScreenState extends State<ProductListScreen>
                 DropdownButton<ProductSortOption>(
                   value: _sortOption,
                   underline: const SizedBox(),
-                  items: ProductSortOption.values.map((option) {
-                    return DropdownMenuItem(
-                      value: option,
-                      child: Text(_getSortLabel(option)),
-                    );
-                  }).toList(),
+                  items:
+                      ProductSortOption.values.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child: Text(_getSortLabel(option)),
+                        );
+                      }).toList(),
                   onChanged: (value) {
                     if (value != null) {
                       setState(() => _sortOption = value);
@@ -242,40 +271,39 @@ class _ProductListScreenState extends State<ProductListScreen>
 
           // Product grid
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _products.isEmpty
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _products.isEmpty
                     ? _buildEmptyState()
                     : RefreshIndicator(
-                        onRefresh: _loadProducts,
-                        child: GridView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.65,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                          itemCount: _products.length + (_isLoadingMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == _products.length) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            final product = _products[index];
-                            return ProductCard(
-                              product: product,
-                              onTap: () => _navigateToDetail(product),
-                              onAddToCart: () {
-                                // TODO: Add to cart
-                              },
+                      onRefresh: _loadProducts,
+                      child: GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.65,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                        itemCount: _products.length + (_isLoadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == _products.length) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
                             );
-                          },
-                        ),
+                          }
+                          final product = _products[index];
+                          return ProductCard(
+                            product: product,
+                            onTap: () => _navigateToDetail(product),
+                            onAddToCart: () => _addToCart(product),
+                          );
+                        },
                       ),
+                    ),
           ),
         ],
       ),
@@ -295,18 +323,16 @@ class _ProductListScreenState extends State<ProductListScreen>
           const SizedBox(height: 16),
           Text(
             'No products found',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
           Text(
             'Try adjusting your search or filters',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -414,15 +440,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ProductSortOption.values.map((option) {
-              return ChoiceChip(
-                label: Text(_getSortLabel(option)),
-                selected: _sortOption == option,
-                onSelected: (selected) {
-                  setState(() => _sortOption = option);
-                },
-              );
-            }).toList(),
+            children:
+                ProductSortOption.values.map((option) {
+                  return ChoiceChip(
+                    label: Text(_getSortLabel(option)),
+                    selected: _sortOption == option,
+                    onSelected: (selected) {
+                      setState(() => _sortOption = option);
+                    },
+                  );
+                }).toList(),
           ),
 
           const SizedBox(height: 32),

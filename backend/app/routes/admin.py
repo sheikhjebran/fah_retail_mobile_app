@@ -274,6 +274,10 @@ async def upload_product_images(
         db.add(image)
         db.flush()
         
+        # Set primary_image on product if this is the first image
+        if is_primary:
+            product.primary_image = img_data["url"]
+        
         created_images.append({
             "id": image.id,
             "image_url": image.image_url,

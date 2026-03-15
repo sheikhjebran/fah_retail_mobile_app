@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/helpers.dart';
 import '../../models/product_model.dart';
 import '../../models/common_models.dart';
 import '../../presenters/product_presenter.dart';
+import '../../presenters/cart_presenter.dart';
 import '../../services/banner_service.dart';
 import '../../widgets/banner_slider.dart';
 import '../../widgets/product_card.dart';
@@ -18,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> implements HomeProductsView {
   final _productPresenter = ProductPresenter();
+  final _cartPresenter = CartPresenter();
   final _bannerService = BannerService();
 
   List<BannerModel> _banners = [];
@@ -27,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> implements HomeProductsView {
   bool _isBannersLoading = true;
   bool _isTrendingLoading = true;
   bool _isDiscountedLoading = true;
+  final Set<int> _addingToCart = {};
 
   @override
   void initState() {
@@ -85,6 +89,27 @@ class _HomeScreenState extends State<HomeScreen> implements HomeProductsView {
         builder: (_) => ProductDetailScreen(productId: product.id),
       ),
     );
+  }
+
+  Future<void> _addToCart(ProductModel product) async {
+    if (_addingToCart.contains(product.id)) return;
+
+    setState(() => _addingToCart.add(product.id));
+
+    try {
+      await _cartPresenter.addToCart(product);
+      if (mounted) {
+        Helpers.showSuccess(context, '${product.name} added to cart');
+      }
+    } catch (e) {
+      if (mounted) {
+        Helpers.showError(context, 'Failed to add to cart: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _addingToCart.remove(product.id));
+      }
+    }
   }
 
   // HomeProductsView implementation
@@ -281,13 +306,15 @@ class _HomeScreenState extends State<HomeScreen> implements HomeProductsView {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: products.length,
         itemBuilder: (context, index) {
+          final product = products[index];
           return Padding(
             padding: const EdgeInsets.only(right: 12),
             child: SizedBox(
               width: 160,
               child: ProductCard(
-                product: products[index],
-                onTap: () => _navigateToProductDetail(products[index]),
+                product: product,
+                onTap: () => _navigateToProductDetail(product),
+                onAddToCart: () => _addToCart(product),
               ),
             ),
           );

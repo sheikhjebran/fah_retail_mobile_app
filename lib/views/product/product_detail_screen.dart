@@ -288,6 +288,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
                   const SizedBox(height: 24),
 
+                  // Shades/Colors section
+                  if (_product!.shades != null &&
+                      _product!.shades!.isNotEmpty) ...[
+                    Text(
+                      'Available Colors',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children:
+                          _product!.shades!.map((shade) {
+                            Color color;
+                            try {
+                              color = Color(
+                                int.parse(shade.replaceFirst('#', '0xFF')),
+                              );
+                            } catch (e) {
+                              color = Colors.grey;
+                            }
+                            return Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.border,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: color.withValues(alpha: 0.4),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Description
                   Text(
                     'Description',
@@ -404,70 +451,88 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Quantity selector
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove),
-                    onPressed: _decrementQuantity,
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
+            // Quantity selector row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Quantity:',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  SizedBox(
-                    width: 40,
-                    child: Text(
-                      '$_quantity',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        onPressed: _decrementQuantity,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 40,
+                        child: Text(
+                          '$_quantity',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: _incrementQuantity,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: _incrementQuantity,
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(height: 12),
 
-            // Add to cart button
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _product!.inStock ? _addToCart : null,
-                icon:
-                    _isAddingToCart
-                        ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.shopping_cart_outlined),
-                label: const Text('Add to Cart'),
-              ),
-            ),
+            // Add to cart and Buy now buttons row
+            Row(
+              children: [
+                // Add to cart button
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _product!.inStock ? _addToCart : null,
+                    icon:
+                        _isAddingToCart
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Icon(Icons.shopping_cart_outlined),
+                    label: const Text('Add to Cart'),
+                  ),
+                ),
 
-            const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-            // Buy now button
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _product!.inStock ? _buyNow : null,
-                child: const Text('Buy Now'),
-              ),
+                // Buy now button
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _product!.inStock ? _buyNow : null,
+                    child: const Text('Buy Now'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

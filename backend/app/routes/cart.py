@@ -68,7 +68,7 @@ async def add_to_cart(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    if product.stock < request.quantity:
+    if product.qty < request.quantity:
         raise HTTPException(status_code=400, detail="Insufficient stock")
 
     # Check if item already in cart
@@ -80,7 +80,7 @@ async def add_to_cart(
     if existing_item:
         # Update quantity
         new_quantity = existing_item.quantity + request.quantity
-        if new_quantity > product.stock:
+        if new_quantity > product.qty:
             raise HTTPException(status_code=400, detail="Insufficient stock")
         existing_item.quantity = new_quantity
     else:
@@ -113,7 +113,7 @@ async def update_cart_item(
     if not cart_item:
         raise HTTPException(status_code=404, detail="Cart item not found")
 
-    if request.quantity > cart_item.product.stock:
+    if request.quantity > cart_item.product.qty:
         raise HTTPException(status_code=400, detail="Insufficient stock")
 
     cart_item.quantity = request.quantity

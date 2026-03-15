@@ -177,13 +177,13 @@ class ProductModel extends Equatable {
 /// Product image model
 class ProductImageModel extends Equatable {
   final int id;
-  final int productId;
+  final int? productId;
   final String imageUrl;
   final bool isPrimary;
 
   const ProductImageModel({
     required this.id,
-    required this.productId,
+    this.productId,
     required this.imageUrl,
     this.isPrimary = false,
   });
@@ -191,7 +191,7 @@ class ProductImageModel extends Equatable {
   factory ProductImageModel.fromJson(Map<String, dynamic> json) {
     return ProductImageModel(
       id: json['id'] as int,
-      productId: json['product_id'] as int,
+      productId: json['product_id'] as int?,
       imageUrl: json['image_url'] as String,
       isPrimary: json['is_primary'] as bool? ?? false,
     );
@@ -200,7 +200,7 @@ class ProductImageModel extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product_id': productId,
+      if (productId != null) 'product_id': productId,
       'image_url': imageUrl,
       'is_primary': isPrimary,
     };

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
 import '../admin/admin_dashboard_screen.dart';
+import 'edit_profile_screen.dart';
+import 'manage_addresses_screen.dart';
+import 'support_screens.dart';
 
 /// Profile screen with user info and settings
 class ProfileScreen extends StatefulWidget {
@@ -109,22 +113,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuItem(
                       icon: Icons.person_outline,
                       title: 'Edit Profile',
-                      onTap: () {
-                        // TODO: Navigate to edit profile
+                      onTap: () async {
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          _loadProfile();
+                        }
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.location_on_outlined,
                       title: 'Manage Addresses',
                       onTap: () {
-                        // TODO: Navigate to addresses
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ManageAddressesScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.payment_outlined,
                       title: 'Payment Methods',
                       onTap: () {
-                        // TODO: Navigate to payment methods
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Payment methods managed during checkout',
+                            ),
+                          ),
+                        );
                       },
                     ),
 
@@ -137,28 +160,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.help_outline,
                       title: 'Help Center',
                       onTap: () {
-                        // TODO: Navigate to help
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HelpCenterScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.chat_outlined,
                       title: 'Contact Us',
                       onTap: () {
-                        // TODO: Navigate to contact
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ContactUsScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.description_outlined,
                       title: 'Terms & Conditions',
                       onTap: () {
-                        // TODO: Navigate to terms
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TermsScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacy Policy',
                       onTap: () {
-                        // TODO: Navigate to privacy
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyScreen(),
+                          ),
+                        );
                       },
                     ),
 
@@ -171,14 +214,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.star_outline,
                       title: 'Rate Us',
                       onTap: () {
-                        // TODO: Open app store
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Opening app store...')),
+                        );
+                        // TODO: Launch app store URL
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.share_outlined,
                       title: 'Share App',
                       onTap: () {
-                        // TODO: Share app
+                        Share.share(
+                          'Check out FAH Retail - Your one-stop shop for accessories!\n\nDownload now: https://play.google.com/store/apps/details?id=com.fahretail.app',
+                          subject: 'FAH Retail App',
+                        );
                       },
                     ),
                     _buildMenuItem(
@@ -186,7 +235,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'About',
                       subtitle: 'Version 1.0.0',
                       onTap: () {
-                        // TODO: Show about dialog
+                        showAboutDialog(
+                          context: context,
+                          applicationName: 'FAH Retail',
+                          applicationVersion: '1.0.0',
+                          applicationIcon: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'F',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          applicationLegalese:
+                              '© 2026 FAH Retail. All rights reserved.',
+                          children: [
+                            const SizedBox(height: 16),
+                            const Text(
+                              'FAH Retail is your one-stop shop for all types of '
+                              'fashion accessories including earrings, necklaces, '
+                              'bracelets, hair accessories, and more.',
+                            ),
+                          ],
+                        );
                       },
                     ),
 
