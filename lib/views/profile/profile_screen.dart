@@ -224,9 +224,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.share_outlined,
                       title: 'Share App',
                       onTap: () {
-                        Share.share(
-                          'Check out FAH Retail - Your one-stop shop for accessories!\n\nDownload now: https://play.google.com/store/apps/details?id=com.fahretail.app',
-                          subject: 'FAH Retail App',
+                        SharePlus.instance.share(
+                          ShareParams(
+                            text:
+                                'Check out FAH Retail - Your one-stop shop for accessories!\n\nDownload now: https://play.google.com/store/apps/details?id=com.fahretail.app',
+                            subject: 'FAH Retail App',
+                          ),
                         );
                       },
                     ),

@@ -56,8 +56,6 @@ class OrderPresenter {
   bool _hasMoreOrders = true;
   bool _isLoading = false;
 
-  String? _pendingRazorpayOrderId;
-
   OrderPresenter({
     OrderService? orderService,
     AddressService? addressService,
@@ -268,8 +266,6 @@ class OrderPresenter {
         amount: amount,
         currency: 'INR',
       );
-
-      _pendingRazorpayOrderId = paymentOrder.orderId;
 
       // Open Razorpay payment sheet
       _paymentService.openPaymentSheet(

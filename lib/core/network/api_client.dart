@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_endpoints.dart';
@@ -241,32 +242,46 @@ class AuthInterceptor extends Interceptor {
 class LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    print('┌─────────────────────────────────────────────────────────────');
-    print('│ REQUEST: ${options.method} ${options.uri}');
-    print('│ Headers: ${options.headers}');
+    developer.log(
+      '┌─────────────────────────────────────────────────────────────',
+    );
+    developer.log('│ REQUEST: ${options.method} ${options.uri}');
+    developer.log('│ Headers: ${options.headers}');
     if (options.data != null) {
-      print('│ Body: ${options.data}');
+      developer.log('│ Body: ${options.data}');
     }
-    print('└─────────────────────────────────────────────────────────────');
+    developer.log(
+      '└─────────────────────────────────────────────────────────────',
+    );
     handler.next(options);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    print('┌─────────────────────────────────────────────────────────────');
-    print('│ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}');
-    print('│ Data: ${response.data}');
-    print('└─────────────────────────────────────────────────────────────');
+    developer.log(
+      '┌─────────────────────────────────────────────────────────────',
+    );
+    developer.log(
+      '│ RESPONSE: ${response.statusCode} ${response.requestOptions.uri}',
+    );
+    developer.log('│ Data: ${response.data}');
+    developer.log(
+      '└─────────────────────────────────────────────────────────────',
+    );
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    print('┌─────────────────────────────────────────────────────────────');
-    print('│ ERROR: ${err.type} ${err.requestOptions.uri}');
-    print('│ Message: ${err.message}');
-    print('│ Response: ${err.response?.data}');
-    print('└─────────────────────────────────────────────────────────────');
+    developer.log(
+      '┌─────────────────────────────────────────────────────────────',
+    );
+    developer.log('│ ERROR: ${err.type} ${err.requestOptions.uri}');
+    developer.log('│ Message: ${err.message}');
+    developer.log('│ Response: ${err.response?.data}');
+    developer.log(
+      '└─────────────────────────────────────────────────────────────',
+    );
     handler.next(err);
   }
 }

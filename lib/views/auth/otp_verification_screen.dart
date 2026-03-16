@@ -27,7 +27,7 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen>
     implements OtpVerificationView {
-  final _otpController = TextEditingController();
+  final _otpController = PinInputController();
 
   bool _isLoading = false;
   int _resendTimer = AppConstants.otpResendTime;
@@ -187,25 +187,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
               const SizedBox(height: 48),
 
               // OTP input
-              PinCodeTextField(
-                appContext: context,
-                controller: _otpController,
+              MaterialPinField(
+                pinController: _otpController,
                 length: AppConstants.otpLength,
                 keyboardType: TextInputType.number,
-                animationType: AnimationType.fade,
-                pinTheme: PinTheme(
-                  shape: PinCodeFieldShape.box,
+                theme: MaterialPinTheme(
+                  shape: MaterialPinShape.outlined,
+                  cellSize: const Size(48, 56),
                   borderRadius: BorderRadius.circular(12),
-                  fieldHeight: 56,
-                  fieldWidth: 48,
-                  activeFillColor: AppColors.surface,
-                  inactiveFillColor: AppColors.surface,
-                  selectedFillColor: AppColors.primaryLight,
-                  activeColor: AppColors.primary,
-                  inactiveColor: AppColors.border,
-                  selectedColor: AppColors.primary,
+                  fillColor: AppColors.surface,
+                  focusedFillColor: AppColors.surface,
+                  filledFillColor: AppColors.surface,
+                  borderColor: AppColors.border,
+                  focusedBorderColor: AppColors.primary,
+                  filledBorderColor: AppColors.primary,
+                  textStyle: Theme.of(context).textTheme.titleMedium,
+                  cursorColor: AppColors.primary,
                 ),
-                enableActiveFill: true,
                 onCompleted: (_) => _handleVerifyOtp(),
                 onChanged: (_) {},
               ),

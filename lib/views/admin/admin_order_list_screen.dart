@@ -503,6 +503,7 @@ class _StatusUpdateDialogState extends State<_StatusUpdateDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children:
+            // ignore: deprecated_member_use
             _statuses.map((status) {
               return RadioListTile<String>(
                 title: Text(_getStatusLabel(status)),
