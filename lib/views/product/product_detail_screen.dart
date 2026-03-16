@@ -28,6 +28,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   bool _isAddingToCart = false;
   int _quantity = 1;
   int _currentImageIndex = 0;
+  String? _selectedShade;
 
   @override
   void initState() {
@@ -298,7 +299,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   if (_product!.shades != null &&
                       _product!.shades!.isNotEmpty) ...[
                     Text(
-                      'Available Colors',
+                      'Select Color',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -317,27 +318,70 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             } catch (e) {
                               color = Colors.grey;
                             }
-                            return Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.border,
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: color.withValues(alpha: 0.4),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                            final isSelected = _selectedShade == shade;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedShade = isSelected ? null : shade;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: isSelected ? 44 : 36,
+                                height: isSelected ? 44 : 36,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? AppColors.primary
+                                            : AppColors.border,
+                                    width: isSelected ? 3 : 2,
                                   ),
-                                ],
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          isSelected
+                                              ? AppColors.primary.withValues(
+                                                alpha: 0.4,
+                                              )
+                                              : color.withValues(alpha: 0.4),
+                                      blurRadius: isSelected ? 8 : 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child:
+                                    isSelected
+                                        ? const Center(
+                                          child: Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 20,
+                                            shadows: [
+                                              Shadow(
+                                                blurRadius: 2,
+                                                color: Colors.black54,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                        : null,
                               ),
                             );
                           }).toList(),
                     ),
+                    if (_selectedShade != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Selected: ${_selectedShade!.toUpperCase()}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                   ],
 

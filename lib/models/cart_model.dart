@@ -32,14 +32,14 @@ class CartItemModel extends Equatable {
 
   /// Get item total price
   double get totalPrice {
-    if (_subtotal != null) return _subtotal!;
-    if (product == null) return _price != null ? _price! * quantity : 0;
+    if (_subtotal != null) return _subtotal;
+    if (product == null) return _price != null ? _price * quantity : 0;
     return product!.displayPrice * quantity;
   }
 
   /// Get item original total price (before discount)
   double get originalTotalPrice {
-    if (product == null) return _price != null ? _price! * quantity : 0;
+    if (product == null) return _price != null ? _price * quantity : 0;
     return product!.price * quantity;
   }
 
@@ -63,26 +63,39 @@ class CartItemModel extends Equatable {
 
   /// Create CartItemModel from JSON
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    // Helper to parse int from int or String
+    int parseInt(dynamic value, [int defaultValue = 0]) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? defaultValue;
+      return defaultValue;
+    }
+
+    // Helper to parse double from num or String
+    double? parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
     return CartItemModel(
-      id: json['id'] as int,
-      productId: json['product_id'] as int,
+      id: parseInt(json['id']),
+      productId: parseInt(json['product_id']),
       product:
           json['product'] != null
               ? ProductModel.fromJson(json['product'] as Map<String, dynamic>)
               : null,
-      quantity: json['quantity'] as int,
+      quantity: parseInt(json['quantity'], 1),
       createdAt:
           json['created_at'] != null
               ? DateTime.parse(json['created_at'] as String)
               : null,
       // Flat fields from backend
-      productName: json['product_name'] as String?,
-      productImage: json['product_image'] as String?,
-      price: json['price'] != null ? (json['price'] as num).toDouble() : null,
-      subtotal:
-          json['subtotal'] != null
-              ? (json['subtotal'] as num).toDouble()
-              : null,
+      productName: json['product_name']?.toString(),
+      productImage: json['product_image']?.toString(),
+      price: parseDouble(json['price']),
+      subtotal: parseDouble(json['subtotal']),
     );
   }
 
@@ -190,12 +203,17 @@ class CartModel extends Equatable {
 
   /// Create CartModel from JSON
   factory CartModel.fromJson(Map<String, dynamic> json) {
-    return CartModel(
-      items:
-          (json['items'] as List)
+    final itemsList = json['items'];
+    List<CartItemModel> items = [];
+
+    if (itemsList != null && itemsList is List) {
+      items =
+          itemsList
               .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
-              .toList(),
-    );
+              .toList();
+    }
+
+    return CartModel(items: items);
   }
 
   /// Convert CartModel to JSON

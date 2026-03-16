@@ -137,7 +137,15 @@ class ProductService {
       final response = await _apiClient.get(ApiEndpoints.categories);
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['items'] ?? response.data;
+        // Handle both list response and wrapped {items: [...]} response
+        List<dynamic> data;
+        if (response.data is List) {
+          data = response.data as List<dynamic>;
+        } else if (response.data is Map && response.data['items'] != null) {
+          data = response.data['items'] as List<dynamic>;
+        } else {
+          data = [];
+        }
         return data
             .map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
             .toList();

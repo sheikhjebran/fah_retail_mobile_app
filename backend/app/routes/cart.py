@@ -22,8 +22,8 @@ def get_cart_response(user: User, db: Session) -> dict:
 
     for item in cart_items:
         product = item.product
-        price = product.discount_price or product.price
-        subtotal = price * item.quantity
+        price = float(product.discount_price or product.price)
+        subtotal = float(price * item.quantity)
         total_amount += subtotal
 
         items.append({
@@ -39,7 +39,7 @@ def get_cart_response(user: User, db: Session) -> dict:
     return {
         "items": items,
         "total_items": sum(item.quantity for item in cart_items),
-        "total_amount": total_amount,
+        "total_amount": float(total_amount),
     }
 
 
