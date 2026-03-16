@@ -187,7 +187,9 @@ class ProductCard extends StatelessWidget {
                         const Spacer(),
 
                         // Add to cart button
-                        if (showAddToCart && product.inStock)
+                        if (showAddToCart &&
+                            product.inStock &&
+                            onAddToCart != null)
                           GestureDetector(
                             onTap: onAddToCart,
                             child: Container(
@@ -201,6 +203,19 @@ class ProductCard extends StatelessWidget {
                                 color: Colors.white,
                                 size: 18,
                               ),
+                            ),
+                          )
+                        else if (showAddToCart && product.inStock)
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.border,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 18,
                             ),
                           ),
                       ],

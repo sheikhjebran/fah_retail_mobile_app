@@ -113,6 +113,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       );
 
       // Open payment gateway
+      if (!mounted) return;
       _paymentService.openPaymentSheet(
         orderId: razorpayOrder.orderId,
         amount: razorpayOrder.amount,
@@ -130,11 +131,8 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   }
 
   Future<void> _completeOrder(String paymentId) async {
-    final request = PlaceOrderRequest(
-      addressId: _selectedAddress!.id,
-      paymentMethod: 'razorpay',
-      razorpayPaymentId: paymentId,
-    );
+    // Create order request payload and call presenter.
+    // NOTE: Request object is not consumed by presenter directly yet.
 
     await _orderPresenter.placeOrder(
       amount: _total,

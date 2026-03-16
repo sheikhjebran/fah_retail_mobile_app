@@ -101,9 +101,12 @@ class _OrderListScreenState extends State<OrderListScreen>
                 onRefresh: _loadOrders,
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _orders.length + (_isLoadingMore ? 1 : 0),
+                  itemCount:
+                      _orders.length +
+                      (_isLoadingMore ? 1 : 0) +
+                      (_hasMore ? 0 : 1),
                   itemBuilder: (context, index) {
-                    if (index == _orders.length) {
+                    if (index == _orders.length && _isLoadingMore) {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(16),
@@ -111,6 +114,16 @@ class _OrderListScreenState extends State<OrderListScreen>
                         ),
                       );
                     }
+
+                    if (index == _orders.length && !_hasMore) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('No more orders to display'),
+                        ),
+                      );
+                    }
+
                     return _OrderCard(
                       order: _orders[index],
                       onTap: () => _navigateToDetail(_orders[index]),

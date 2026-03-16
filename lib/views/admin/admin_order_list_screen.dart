@@ -19,7 +19,6 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
   List<OrderModel> _orders = [];
   bool _isLoading = true;
   String? _selectedStatus;
-  final int _currentPage = 1;
   bool _hasMore = true;
 
   final List<String> _statusFilters = [
@@ -45,6 +44,7 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
   }
 
   Future<void> _loadOrders({bool refresh = true}) async {
+    if (!refresh && !_hasMore) return;
     await _presenter.loadOrders(
       refresh: refresh,
       status: _selectedStatus == 'all' ? null : _selectedStatus,
@@ -99,13 +99,6 @@ class _AdminOrderListScreenState extends State<AdminOrderListScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _showOrderUpdated() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Order status updated')));
-    _loadOrders();
   }
 
   @override

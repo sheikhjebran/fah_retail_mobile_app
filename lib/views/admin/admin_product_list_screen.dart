@@ -21,7 +21,6 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
 
   List<ProductModel> _products = [];
   bool _isLoading = true;
-  final int _currentPage = 1;
   bool _hasMore = true;
 
   @override
@@ -39,6 +38,7 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
   }
 
   Future<void> _loadProducts({bool refresh = true}) async {
+    if (!refresh && !_hasMore) return;
     await _presenter.loadProducts(
       refresh: refresh,
       search: _searchController.text.isNotEmpty ? _searchController.text : null,

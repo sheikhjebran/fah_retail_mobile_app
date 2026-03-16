@@ -137,8 +137,8 @@ class Helpers {
 
   /// Get user role
   static Future<String> getUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
     // TODO: Parse user data and return role
+    await SharedPreferences.getInstance();
     return AppConstants.roleUser;
   }
 

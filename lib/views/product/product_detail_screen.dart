@@ -6,6 +6,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/product_model.dart';
 import '../../presenters/product_presenter.dart';
 import '../../presenters/cart_presenter.dart';
+import '../cart/cart_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 
 /// Product detail screen with images carousel
@@ -62,6 +63,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   Future<void> _addToCart() async {
     if (_product == null || _isAddingToCart) return;
 
+    // Enforce shade selection when applicable
+    if (_product!.shades != null &&
+        _product!.shades!.isNotEmpty &&
+        _selectedShade == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a color/shade before adding to cart'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isAddingToCart = true);
 
     try {
@@ -73,7 +86,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             action: SnackBarAction(
               label: 'VIEW CART',
               onPressed: () {
-                // Navigate to cart tab in dashboard
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
                     builder: (_) => const DashboardScreen(initialIndex: 2),
@@ -98,8 +110,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     }
   }
 
-  void _buyNow() {
-    // TODO: Navigate to checkout with this product
+  Future<void> _buyNow() async {
+    if (_product == null || !_product!.inStock) return;
+
+    // Enforce shade selection when applicable
+    if (_product!.shades != null &&
+        _product!.shades!.isNotEmpty &&
+        _selectedShade == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a color/shade before purchasing'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isAddingToCart = true);
+
+    try {
+      await _cartPresenter.addToCart(_product!, quantity: _quantity);
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CartScreen()),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to process Buy Now: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      }
+    }
   }
 
   // ProductDetailView implementation

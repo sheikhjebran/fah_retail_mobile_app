@@ -43,8 +43,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _user = await _authService.getProfile();
       if (_user != null) {
         _nameController.text = _user!.name;
-        _emailController.text = _user!.email ?? '';
-        _phoneController.text = _user!.phone ?? '';
+        _emailController.text = _user!.email;
+        _phoneController.text = _user!.phone;
       }
     } catch (e) {
       if (mounted) {
