@@ -24,14 +24,12 @@ async def get_addresses(
     return [
         {
             "id": addr.id,
-            "full_name": addr.full_name,
+            "name": addr.name,
             "phone": addr.phone,
-            "address_line1": addr.address_line1,
-            "address_line2": addr.address_line2,
+            "address": addr.address,
             "city": addr.city,
             "state": addr.state,
             "pincode": addr.pincode,
-            "label": addr.label,
             "is_default": addr.is_default,
         }
         for addr in addresses
@@ -58,14 +56,12 @@ async def add_address(
 
     address = Address(
         user_id=current_user.id,
-        full_name=request.full_name,
+        name=request.name,
         phone=request.phone,
-        address_line1=request.address_line1,
-        address_line2=request.address_line2,
+        address=request.address,
         city=request.city,
         state=request.state,
         pincode=request.pincode,
-        label=request.label,
         is_default=request.is_default or existing_count == 0,
     )
     db.add(address)
@@ -74,14 +70,12 @@ async def add_address(
 
     return {
         "id": address.id,
-        "full_name": address.full_name,
+        "name": address.name,
         "phone": address.phone,
-        "address_line1": address.address_line1,
-        "address_line2": address.address_line2,
+        "address": address.address,
         "city": address.city,
         "state": address.state,
         "pincode": address.pincode,
-        "label": address.label,
         "is_default": address.is_default,
     }
 
@@ -103,22 +97,18 @@ async def update_address(
         raise HTTPException(status_code=404, detail="Address not found")
 
     # Update fields
-    if request.full_name:
-        address.full_name = request.full_name
+    if request.name:
+        address.name = request.name
     if request.phone:
         address.phone = request.phone
-    if request.address_line1:
-        address.address_line1 = request.address_line1
-    if request.address_line2 is not None:
-        address.address_line2 = request.address_line2
+    if request.address:
+        address.address = request.address
     if request.city:
         address.city = request.city
     if request.state:
         address.state = request.state
     if request.pincode:
         address.pincode = request.pincode
-    if request.label:
-        address.label = request.label
 
     if request.is_default:
         # Unset other defaults
@@ -133,14 +123,12 @@ async def update_address(
 
     return {
         "id": address.id,
-        "full_name": address.full_name,
+        "name": address.name,
         "phone": address.phone,
-        "address_line1": address.address_line1,
-        "address_line2": address.address_line2,
+        "address": address.address,
         "city": address.city,
         "state": address.state,
         "pincode": address.pincode,
-        "label": address.label,
         "is_default": address.is_default,
     }
 
