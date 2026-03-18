@@ -63,7 +63,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSaving = true);
 
     try {
+      if (_user == null) {
+        throw Exception('User profile not loaded');
+      }
+
       await _authService.updateProfile(
+        _user!,
         name: _nameController.text.trim(),
         email:
             _emailController.text.trim().isNotEmpty

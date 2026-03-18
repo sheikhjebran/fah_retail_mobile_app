@@ -128,7 +128,8 @@ class AuthService {
   }
 
   /// Update user profile
-  Future<UserModel> updateProfile({
+  Future<UserModel> updateProfile(
+    UserModel updatedUser, {
     String? name,
     String? email,
     String? address,

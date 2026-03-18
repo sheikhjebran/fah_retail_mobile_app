@@ -4,7 +4,7 @@ class ApiEndpoints {
 
   // Base URL - Change this for production
   // Use your PC's local IP for physical device testing
-  static const String baseUrl = 'http://192.168.1.16:8000/api';
+  static const String baseUrl = 'http://192.168.1.3:8000/api';
 
   // Authentication
   static const String sendOtp = '/auth/send-otp';
@@ -32,9 +32,8 @@ class ApiEndpoints {
   // Cart
   static const String cart = '/cart';
   static const String addToCart = '/cart';
-  static const String updateCart = '/cart';
   static String removeFromCart(int id) => '/cart/$id';
-  static const String clearCart = '/cart/clear';
+  static const String clearCart = '/cart';
 
   // Orders
   static const String orders = '/orders';

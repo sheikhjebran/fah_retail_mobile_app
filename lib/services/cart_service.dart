@@ -48,15 +48,15 @@ class CartService {
   }
 
   /// Update cart item quantity
-  Future<CartItemModel> updateCartItem(UpdateCartRequest request) async {
+  Future<CartModel> updateCartItem(UpdateCartRequest request) async {
     try {
       final response = await _apiClient.put(
-        ApiEndpoints.updateCart,
-        data: request.toJson(),
+        '${ApiEndpoints.cart}/${request.cartItemId}',
+        data: {'quantity': request.quantity},
       );
 
       if (response.statusCode == 200) {
-        return CartItemModel.fromJson(response.data);
+        return CartModel.fromJson(response.data);
       }
 
       throw ApiException(response.data['message'] ?? 'Failed to update cart');
@@ -67,17 +67,19 @@ class CartService {
   }
 
   /// Remove item from cart
-  Future<void> removeFromCart(int cartItemId) async {
+  Future<CartModel> removeFromCart(int cartItemId) async {
     try {
       final response = await _apiClient.delete(
         ApiEndpoints.removeFromCart(cartItemId),
       );
 
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw ApiException(
-          response.data['message'] ?? 'Failed to remove from cart',
-        );
+      if (response.statusCode == 200) {
+        return CartModel.fromJson(response.data);
       }
+
+      throw ApiException(
+        response.data['message'] ?? 'Failed to remove from cart',
+      );
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to remove from cart: $e');
@@ -85,13 +87,15 @@ class CartService {
   }
 
   /// Clear entire cart
-  Future<void> clearCart() async {
+  Future<CartModel> clearCart() async {
     try {
       final response = await _apiClient.delete(ApiEndpoints.clearCart);
 
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        throw ApiException(response.data['message'] ?? 'Failed to clear cart');
+      if (response.statusCode == 200) {
+        return CartModel.fromJson(response.data);
       }
+
+      throw ApiException(response.data['message'] ?? 'Failed to clear cart');
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException('Failed to clear cart: $e');

@@ -7,7 +7,10 @@
     <list default="true" id="4762251a-4837-4f53-a0c0-780336a3da19" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_SDK.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/devtools_options.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/devtools_options.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/launch.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/views/admin/admin_order_list_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/views/admin/admin_order_list_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/views/admin/admin_product_form_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/views/admin/admin_product_form_screen.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,6 +19,11 @@
   </component>
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_C:/Users/sheik/Documents/GitHub/fah_retail_mobile_app" value="3AxIO8Llmq1PGOIQOoxrLLSMYTu" />
+    </persistenceIdMap>
   </component>
   <component name="FileEditorManager">
     <leaf>
@@ -66,7 +74,10 @@
     "io.flutter.project.isFirstOpen": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/sheik/Documents/GitHub/fah_retail_mobile_app",
-    "settings.editor.selected.configurable": "AndroidSdkUpdater",
+    "project.structure.last.edited": "Global Libraries",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "dart.settings",
     "show.migrate.to.gradle.popup": "false"
   }
 }]]></component>
@@ -101,5 +112,13 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
     </layout>
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
   </component>
 </project>

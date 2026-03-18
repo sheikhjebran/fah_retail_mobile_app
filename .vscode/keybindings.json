@@ -1,0 +1,35 @@
+[
+    {
+        "key": "F5",
+        "command": "debugger.action.continue"
+    },
+    {
+        "key": "F6",
+        "command": "workbench.action.debug.stepOver"
+    },
+    {
+        "key": "F7",
+        "command": "workbench.action.debug.stepInto"
+    },
+    {
+        "key": "Shift+F8",
+        "command": "workbench.action.debug.stepOut"
+    },
+    {
+        "key": "F9",
+        "command": "editor.debug.action.toggleBreakpoint"
+    },
+    {
+        "key": "Ctrl+Shift+D",
+        "command": "workbench.view.debug",
+        "when": "viewContainer.workbench.view.debug.enabled"
+    },
+    {
+        "key": "Ctrl+F5",
+        "command": "workbench.action.debug.restart"
+    },
+    {
+        "key": "Shift+F5",
+        "command": "workbench.action.debug.stop"
+    }
+]

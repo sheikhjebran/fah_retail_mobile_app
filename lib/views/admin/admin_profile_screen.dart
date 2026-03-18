@@ -4,6 +4,11 @@ import '../../core/utils/helpers.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
+import 'admin_edit_profile_screen.dart';
+import 'admin_notifications_screen.dart';
+import 'admin_security_screen.dart';
+import 'admin_help_center_screen.dart';
+import 'admin_about_screen.dart';
 
 /// Admin profile screen with admin info and settings
 class AdminProfileScreen extends StatefulWidget {
@@ -148,22 +153,50 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     _buildMenuItem(
                       icon: Icons.person_outline,
                       title: 'Edit Profile',
-                      onTap: () {
-                        // TODO: Navigate to edit profile
+                      onTap: () async {
+                        final result = await Navigator.push<UserModel>(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => AdminEditProfileScreen(
+                                  user:
+                                      _user ??
+                                      const UserModel(
+                                        id: 0,
+                                        name: '',
+                                        phone: '',
+                                        email: '',
+                                      ),
+                                ),
+                          ),
+                        );
+                        if (result != null) {
+                          setState(() => _user = result);
+                        }
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.notifications_outlined,
                       title: 'Notifications',
                       onTap: () {
-                        // TODO: Navigate to notifications settings
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminNotificationsScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.security_outlined,
                       title: 'Security',
                       onTap: () {
-                        // TODO: Navigate to security settings
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminSecurityScreen(),
+                          ),
+                        );
                       },
                     ),
 
@@ -176,14 +209,24 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       icon: Icons.help_outline,
                       title: 'Help Center',
                       onTap: () {
-                        // TODO: Navigate to help
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminHelpCenterScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildMenuItem(
                       icon: Icons.info_outline,
                       title: 'About',
                       onTap: () {
-                        // TODO: Show about dialog
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminAboutScreen(),
+                          ),
+                        );
                       },
                     ),
 

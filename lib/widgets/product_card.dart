@@ -149,12 +149,26 @@ class ProductCard extends StatelessWidget {
                     // Product name
                     Text(
                       product.name,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    const SizedBox(height: 4),
+
+                    // Product description (1-2 lines truncated)
+                    if (product.description.isNotEmpty)
+                      Text(
+                        product.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.2,
+                        ),
+                      ),
+
                     const Spacer(),
 
                     // Price row

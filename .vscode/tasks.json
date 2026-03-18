@@ -1,0 +1,62 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Flutter: Get Dependencies",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "pub",
+                "get"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "isBackground": false
+        },
+        {
+            "label": "Flutter: Run Android",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "run",
+                "-d",
+                "android"
+            ],
+            "group": "build",
+            "isBackground": false
+        },
+        {
+            "label": "Flutter: Run Web",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "run",
+                "-d",
+                "chrome"
+            ],
+            "group": "build",
+            "isBackground": false
+        },
+        {
+            "label": "Flutter: Clean",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "clean"
+            ],
+            "group": "build",
+            "isBackground": false
+        },
+        {
+            "label": "Flutter: Doctor",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "doctor",
+                "-v"
+            ],
+            "group": "build",
+            "isBackground": false
+        }
+    ]
+}

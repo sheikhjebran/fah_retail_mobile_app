@@ -15,31 +15,74 @@ router = APIRouter()
 
 def get_cart_response(user: User, db: Session) -> dict:
     """Build cart response for user."""
+    from app.schemas import ProductResponse, CategoryResponse, ProductImageResponse
+    
     cart_items = db.query(CartItem).filter(CartItem.user_id == user.id).all()
 
     items = []
-    total_amount = 0
+    subtotal = 0
 
     for item in cart_items:
         product = item.product
+        
+        # Build product response object
+        category_response = None
+        if product.category:
+            category_response = {
+                "id": product.category.id,
+                "name": product.category.name,
+                "parent_id": product.category.parent_id,
+                "image_url": product.category.image_url,
+                "is_active": product.category.is_active,
+                "subcategories": [],
+            }
+        
+        # Build images list
+        images = []
+        if product.images:
+            images = [
+                {
+                    "id": img.id,
+                    "image_url": img.image_url,
+                    "is_primary": img.is_primary,
+                }
+                for img in product.images
+            ]
+        
+        # Build full product response
+        product_response = {
+            "id": product.id,
+            "name": product.name,
+            "description": product.description,
+            "category_id": product.category_id,
+            "price": float(product.price),
+            "discount_price": float(product.discount_price) if product.discount_price else None,
+            "qty": product.qty,
+            "shades": product.shades,
+            "is_trending": product.is_trending,
+            "primary_image": product.primary_image,
+            "is_active": product.is_active,
+            "images": images,
+            "category": category_response,
+            "created_at": product.created_at.isoformat(),
+        }
+        
         price = float(product.discount_price or product.price)
-        subtotal = float(price * item.quantity)
-        total_amount += subtotal
+        item_subtotal = float(price * item.quantity)
+        subtotal += item_subtotal
 
         items.append({
             "id": item.id,
             "product_id": product.id,
-            "product_name": product.name,
-            "product_image": product.images[0].image_url if product.images else None,
+            "product": product_response,
             "quantity": item.quantity,
-            "price": price,
-            "subtotal": subtotal,
+            "created_at": item.created_at.isoformat(),
         })
 
     return {
         "items": items,
+        "subtotal": subtotal,
         "total_items": sum(item.quantity for item in cart_items),
-        "total_amount": float(total_amount),
     }
 
 
@@ -152,4 +195,4 @@ async def clear_cart(
     db.query(CartItem).filter(CartItem.user_id == current_user.id).delete()
     db.commit()
 
-    return {"success": True, "message": "Cart cleared"}
+    return get_cart_response(current_user, db)

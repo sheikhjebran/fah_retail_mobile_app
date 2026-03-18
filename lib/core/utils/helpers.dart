@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../models/user_model.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 
@@ -42,6 +46,11 @@ class Helpers {
   /// Show success snackbar
   static void showSuccess(BuildContext context, String message) {
     showSnackBar(context, message, isSuccess: true);
+  }
+
+  /// Show info snackbar
+  static void showInfo(BuildContext context, String message) {
+    showSnackBar(context, message, isError: false, isSuccess: false);
   }
 
   /// Show loading dialog
@@ -119,11 +128,15 @@ class Helpers {
     return prefs.getString(AppConstants.tokenKey);
   }
 
-  /// Save auth token
-  static Future<void> saveAuthToken(String token) async {
+  /// Save auth token and optional user data
+  static Future<void> saveAuthToken(String token, {UserModel? user}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.tokenKey, token);
     await prefs.setBool(AppConstants.isLoggedInKey, true);
+
+    if (user != null) {
+      await prefs.setString(AppConstants.userKey, jsonEncode(user.toJson()));
+    }
   }
 
   /// Clear auth data
@@ -137,8 +150,17 @@ class Helpers {
 
   /// Get user role
   static Future<String> getUserRole() async {
-    // TODO: Parse user data and return role
-    await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString(AppConstants.userKey);
+      if (userJson != null && userJson.isNotEmpty) {
+        final userData = jsonDecode(userJson) as Map<String, dynamic>;
+        return (userData['role'] as String?)?.toLowerCase() ??
+            AppConstants.roleUser;
+      }
+    } catch (_) {
+      // fallback to user role
+    }
     return AppConstants.roleUser;
   }
 

@@ -140,16 +140,18 @@ class CartPresenter {
         quantity: quantity,
       );
 
-      final item = await _cartService.updateCartItem(request);
+      final updatedCart = await _cartService.updateCartItem(request);
+      _cart = updatedCart;
 
-      // Update local cart
-      final updatedItems =
-          _cart.items.map((i) {
-            return i.id == cartItemId ? item : i;
-          }).toList();
-      _cart = _cart.copyWith(items: updatedItems);
+      // Get the updated item
+      final item = _cart.getItemByProductId(
+        _cart.items.firstWhere((i) => i.id == cartItemId).productId,
+      );
 
-      _view?.showItemUpdated(item);
+      if (item != null) {
+        _view?.showItemUpdated(item);
+      }
+
       _view?.showCart(_cart);
       _view?.updateCartBadge(_cart.itemCount);
     } catch (e) {
@@ -183,12 +185,8 @@ class CartPresenter {
     _isLoading = true;
 
     try {
-      await _cartService.removeFromCart(cartItemId);
-
-      // Update local cart
-      final updatedItems =
-          _cart.items.where((i) => i.id != cartItemId).toList();
-      _cart = _cart.copyWith(items: updatedItems);
+      final updatedCart = await _cartService.removeFromCart(cartItemId);
+      _cart = updatedCart;
 
       _view?.showItemRemoved(cartItemId);
 
@@ -212,9 +210,8 @@ class CartPresenter {
     _isLoading = true;
 
     try {
-      await _cartService.clearCart();
-
-      _cart = const CartModel();
+      final updatedCart = await _cartService.clearCart();
+      _cart = updatedCart;
 
       _view?.showCartCleared();
       _view?.showEmptyCart();
