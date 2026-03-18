@@ -267,7 +267,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        '#${pickerColor.value.toRadixString(16).substring(2).toUpperCase()}',
+                        '#${((pickerColor.r * 255).round().clamp(0, 255)).toRadixString(16).padLeft(2, '0').toUpperCase()}${((pickerColor.g * 255).round().clamp(0, 255)).toRadixString(16).padLeft(2, '0').toUpperCase()}${((pickerColor.b * 255).round().clamp(0, 255)).toRadixString(16).padLeft(2, '0').toUpperCase()}',
                         style: TextStyle(
                           color:
                               pickerColor.computeLuminance() > 0.5
@@ -309,7 +309,10 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
+    final r = (color.r * 255).round().clamp(0, 255);
+    final g = (color.g * 255).round().clamp(0, 255);
+    final b = (color.b * 255).round().clamp(0, 255);
+    return '#${r.toRadixString(16).padLeft(2, '0').toUpperCase()}${g.toRadixString(16).padLeft(2, '0').toUpperCase()}${b.toRadixString(16).padLeft(2, '0').toUpperCase()}';
   }
 
   Future<void> _saveProduct() async {

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
@@ -495,19 +497,29 @@ class _StatusUpdateDialogState extends State<_StatusUpdateDialog> {
       title: const Text('Update Order Status'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children:
-            // ignore: deprecated_member_use
-            _statuses.map((status) {
-              return RadioListTile<String>(
-                title: Text(_getStatusLabel(status)),
-                value: status,
-                groupValue: _selectedStatus,
-                onChanged: (value) {
-                  setState(() => _selectedStatus = value!);
-                },
-                activeColor: AppColors.primary,
-              );
-            }).toList(),
+        children: [
+          Column(
+            children:
+                _statuses.map((status) {
+                  return ListTile(
+                    title: Text(_getStatusLabel(status)),
+                    leading: Radio<String>(
+                      value: status,
+                      groupValue: _selectedStatus,
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedStatus = value);
+                        }
+                      },
+                      activeColor: AppColors.primary,
+                    ),
+                    onTap: () {
+                      setState(() => _selectedStatus = status);
+                    },
+                  );
+                }).toList(),
+          ),
+        ],
       ),
       actions: [
         TextButton(

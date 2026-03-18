@@ -2,87 +2,28 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug",
-      "request": "launch",
+      "name": "FAH Retail - Debug",
       "type": "dart",
-      "flutterMode": "debug",
-      "program": "lib/main.dart"
-    },
-    {
-      "name": "Profile",
       "request": "launch",
-      "type": "dart",
-      "flutterMode": "profile",
-      "program": "lib/main.dart"
-    },
-    {
-      "name": "Release",
-      "request": "launch",
-      "type": "dart",
-      "flutterMode": "release",
-      "program": "lib/main.dart"
-    },
-    {
-      "name": "Debug (Android)",
-      "request": "launch",
-      "type": "dart",
-      "flutterMode": "debug",
       "program": "lib/main.dart",
-      "toolArgs": ["-d", "RZ8N92MYF0X"]
+      "buildMode": "debug",
+      "flutterMode": "debug"
     },
     {
-      "name": "Debug (iOS)",
-      "request": "launch",
+      "name": "FAH Retail - Profile",
       "type": "dart",
-      "flutterMode": "debug",
+      "request": "launch",
       "program": "lib/main.dart",
-      "deviceId": "ios"
+      "buildMode": "profile",
+      "flutterMode": "profile"
     },
     {
-      "name": "Attach to Flutter Process",
-      "request": "attach",
-      "type": "dart"
-    },
-    {
-      "name": "Attach to Flutter on Device",
-      "request": "attach",
+      "name": "FAH Retail - Release",
       "type": "dart",
-      "deviceId": "flutter-tester"
-    },
-    {
-      "name": "Run All Tests",
       "request": "launch",
-      "type": "dart",
-      "program": "test/"
-    },
-    {
-      "name": "Run Widget Tests",
-      "request": "launch",
-      "type": "dart",
-      "program": "test/widget_test.dart"
-    },
-    {
-      "name": "Debug with Verbose Logging",
-      "request": "launch",
-      "type": "dart",
-      "flutterMode": "debug",
       "program": "lib/main.dart",
-      "args": ["--verbose"]
-    },
-    {
-      "name": "Debug with Observatory",
-      "request": "launch",
-      "type": "dart",
-      "flutterMode": "debug",
-      "program": "lib/main.dart",
-      "args": ["--observatory-port=8888"]
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Debug + Backend",
-      "configurations": ["Debug"],
-      "stopAll": true
+      "buildMode": "release",
+      "flutterMode": "release"
     }
   ]
 }
