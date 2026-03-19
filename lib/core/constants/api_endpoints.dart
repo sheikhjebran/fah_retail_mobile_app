@@ -4,7 +4,7 @@ class ApiEndpoints {
 
   // Base URL - Change this for production
   // Use your PC's local IP for physical device testing
-  static const String baseUrl = 'http://192.168.1.3:8000/api';
+  static const String baseUrl = 'http://192.168.1.17:8000/api';
 
   // Authentication
   static const String sendOtp = '/auth/send-otp';
