@@ -65,10 +65,14 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
+    final user = await Helpers.getUserData();
+
+    if (!mounted) return;
+
     // Navigate based on auth state
     Helpers.navigateAndRemoveAll(
       context,
-      isLoggedIn ? const DashboardScreen() : const LoginScreen(),
+      isLoggedIn ? DashboardScreen(user: user) : const LoginScreen(),
     );
   }
 

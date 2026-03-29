@@ -235,4 +235,14 @@ class Helpers {
       context,
     ).push<T>(MaterialPageRoute(builder: (_) => page));
   }
+
+  static Future<Object?> getUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString(AppConstants.userKey);
+    if (userJson != null && userJson.isNotEmpty) {
+      final userData = jsonDecode(userJson) as Map<String, dynamic>;
+      return UserModel.fromJson(userData);
+    }
+    return null;
+  }
 }

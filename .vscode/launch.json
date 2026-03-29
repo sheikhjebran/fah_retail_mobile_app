@@ -1,47 +1,4 @@
 {
   "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "FAH Retail - Debug (Android)",
-      "type": "dart",
-      "request": "launch",
-      "program": "lib/main.dart",
-      "buildMode": "debug",
-      "flutterMode": "debug",
-      "deviceId": "android",
-      "console": "debugConsole",
-      "showMemoryUsage": true,
-      "verboseLogging": false
-    },
-    {
-      "name": "FAH Retail - Debug (Web)",
-      "type": "dart",
-      "request": "launch",
-      "program": "lib/main.dart",
-      "buildMode": "debug",
-      "flutterMode": "debug",
-      "deviceId": "chrome",
-      "console": "debugConsole"
-    },
-    {
-      "name": "FAH Retail - Profile (Android)",
-      "type": "dart",
-      "request": "launch",
-      "program": "lib/main.dart",
-      "buildMode": "profile",
-      "flutterMode": "profile",
-      "deviceId": "android",
-      "console": "debugConsole"
-    },
-    {
-      "name": "FAH Retail - Release (Android)",
-      "type": "dart",
-      "request": "launch",
-      "program": "lib/main.dart",
-      "buildMode": "release",
-      "flutterMode": "release",
-      "deviceId": "android",
-      "console": "debugConsole"
-    }
-  ]
+  "configurations": []
 }

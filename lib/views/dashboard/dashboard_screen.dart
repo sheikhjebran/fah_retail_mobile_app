@@ -10,7 +10,7 @@ import '../profile/profile_screen.dart';
 class DashboardScreen extends StatefulWidget {
   final int initialIndex;
 
-  const DashboardScreen({super.key, this.initialIndex = 0});
+  const DashboardScreen({super.key, this.initialIndex = 0, required user});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
