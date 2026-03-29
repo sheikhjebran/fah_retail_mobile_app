@@ -1,69 +1,93 @@
-import 'package:equatable/equatable.dart';
-import 'product_model.dart';
+import 'package:hive/hive.dart';
 
-/// Cart item model for FAH Retail App
-class CartItemModel extends Equatable {
+part 'cart_model.g.dart';
+
+/// Cart item model for FAH Retail App (Hive-compatible, flat storage)
+@HiveType(typeId: 0)
+class CartItemModel extends HiveObject {
+  @HiveField(0)
   final int id;
+
+  @HiveField(1)
   final int productId;
-  final ProductModel? product;
+
+  @HiveField(2)
   final int quantity;
+
+  @HiveField(3)
   final DateTime? createdAt;
 
-  // Flat fields from backend response
-  final String? _productName;
-  final String? _productImage;
-  final double? _price;
-  final double? _subtotal;
+  // Flat fields for offline display (no nested objects)
+  @HiveField(4)
+  final String? productName;
 
-  const CartItemModel({
+  @HiveField(5)
+  final String? productImage;
+
+  @HiveField(6)
+  final double? price;
+
+  @HiveField(7)
+  final double? subtotal;
+
+  // Product data for detail view
+  @HiveField(8)
+  final String? productDescription;
+
+  @HiveField(9)
+  final double? productOriginalPrice;
+
+  @HiveField(10)
+  final double? productDiscountPrice;
+
+  @HiveField(11)
+  final bool? productHasDiscount;
+
+  CartItemModel({
     required this.id,
     required this.productId,
-    this.product,
     required this.quantity,
     this.createdAt,
-    String? productName,
-    String? productImage,
-    double? price,
-    double? subtotal,
-  }) : _productName = productName,
-       _productImage = productImage,
-       _price = price,
-       _subtotal = subtotal;
+    this.productName,
+    this.productImage,
+    this.price,
+    this.subtotal,
+    this.productDescription,
+    this.productOriginalPrice,
+    this.productDiscountPrice,
+    this.productHasDiscount,
+  });
 
   /// Get item total price
-  double get totalPrice {
-    if (_subtotal != null) return _subtotal;
-    if (product == null) return _price != null ? _price * quantity : 0;
-    return product!.displayPrice * quantity;
-  }
+  double get totalPrice => subtotal ?? (price != null ? price! * quantity : 0);
 
   /// Get item original total price (before discount)
-  double get originalTotalPrice {
-    if (product == null) return _price != null ? _price * quantity : 0;
-    return product!.price * quantity;
-  }
+  double get originalTotalPrice =>
+      productOriginalPrice != null ? productOriginalPrice! * quantity : price != null ? price! * quantity : 0;
 
   /// Get savings amount
   double get savings {
-    if (product == null || !product!.hasDiscount) return 0;
-    return (product!.price - product!.discountPrice!) * quantity;
+    if (productHasDiscount != true || productDiscountPrice == null) return 0;
+    return (productOriginalPrice ?? price ?? 0 - productDiscountPrice!) * quantity;
   }
 
-  /// Get product name (convenience getter)
-  String get productName => product?.name ?? _productName ?? 'Unknown Product';
+  /// Get product name
+  String get productNameValue => productName ?? 'Unknown Product';
 
-  /// Get product image (convenience getter)
-  String? get productImage => product?.displayImage ?? _productImage;
+  /// Get product image
+  String? get productImageUrl => productImage;
 
-  /// Get unit price (convenience getter)
-  double get price => product?.displayPrice ?? _price ?? 0;
+  /// Get unit price
+  double get unitPrice => productDiscountPrice ?? price ?? 0;
 
-  /// Get subtotal (convenience getter)
-  double get subtotal => totalPrice;
+  /// Check if product has discount
+  bool get hasDiscount => productHasDiscount ?? false;
+
+  /// Get display price (discounted or regular)
+  double get displayPrice => productDiscountPrice ?? price ?? 0;
 
   /// Create CartItemModel from JSON
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
-    // Helper to parse int from int or String
     int parseInt(dynamic value, [int defaultValue = 0]) {
       if (value == null) return defaultValue;
       if (value is int) return value;
@@ -71,7 +95,6 @@ class CartItemModel extends Equatable {
       return defaultValue;
     }
 
-    // Helper to parse double from num or String
     double? parseDouble(dynamic value) {
       if (value == null) return null;
       if (value is num) return value.toDouble();
@@ -82,20 +105,18 @@ class CartItemModel extends Equatable {
     return CartItemModel(
       id: parseInt(json['id']),
       productId: parseInt(json['product_id']),
-      product:
-          json['product'] != null
-              ? ProductModel.fromJson(json['product'] as Map<String, dynamic>)
-              : null,
       quantity: parseInt(json['quantity'], 1),
-      createdAt:
-          json['created_at'] != null
-              ? DateTime.parse(json['created_at'] as String)
-              : null,
-      // Flat fields from backend
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
       productName: json['product_name']?.toString(),
       productImage: json['product_image']?.toString(),
       price: parseDouble(json['price']),
       subtotal: parseDouble(json['subtotal']),
+      productDescription: json['product_description']?.toString(),
+      productOriginalPrice: parseDouble(json['product_original_price']),
+      productDiscountPrice: parseDouble(json['product_discount_price']),
+      productHasDiscount: json['product_has_discount'] as bool?,
     );
   }
 
@@ -104,13 +125,16 @@ class CartItemModel extends Equatable {
     return {
       'id': id,
       'product_id': productId,
-      'product': product?.toJson(),
       'quantity': quantity,
       'created_at': createdAt?.toIso8601String(),
-      'product_name': _productName,
-      'product_image': _productImage,
-      'price': _price,
-      'subtotal': _subtotal,
+      'product_name': productName,
+      'product_image': productImage,
+      'price': price,
+      'subtotal': subtotal,
+      'product_description': productDescription,
+      'product_original_price': productOriginalPrice,
+      'product_discount_price': productDiscountPrice,
+      'product_has_discount': productHasDiscount,
     };
   }
 
@@ -118,46 +142,60 @@ class CartItemModel extends Equatable {
   CartItemModel copyWith({
     int? id,
     int? productId,
-    ProductModel? product,
     int? quantity,
     DateTime? createdAt,
     String? productName,
     String? productImage,
     double? price,
     double? subtotal,
+    String? productDescription,
+    double? productOriginalPrice,
+    double? productDiscountPrice,
+    bool? productHasDiscount,
   }) {
     return CartItemModel(
       id: id ?? this.id,
       productId: productId ?? this.productId,
-      product: product ?? this.product,
       quantity: quantity ?? this.quantity,
       createdAt: createdAt ?? this.createdAt,
-      productName: productName ?? _productName,
-      productImage: productImage ?? _productImage,
-      price: price ?? _price,
-      subtotal: subtotal ?? _subtotal,
+      productName: productName ?? this.productName,
+      productImage: productImage ?? this.productImage,
+      price: price ?? this.price,
+      subtotal: subtotal ?? this.subtotal,
+      productDescription: productDescription ?? this.productDescription,
+      productOriginalPrice: productOriginalPrice ?? this.productOriginalPrice,
+      productDiscountPrice: productDiscountPrice ?? this.productDiscountPrice,
+      productHasDiscount: productHasDiscount ?? this.productHasDiscount,
     );
   }
 
-  @override
+  /// Get props for equality (used by Hive)
   List<Object?> get props => [
-    id,
-    productId,
-    product,
-    quantity,
-    createdAt,
-    _productName,
-    _productImage,
-    _price,
-    _subtotal,
-  ];
+        id,
+        productId,
+        quantity,
+        createdAt,
+        productName,
+        productImage,
+        price,
+        subtotal,
+        productDescription,
+        productOriginalPrice,
+        productDiscountPrice,
+        productHasDiscount,
+      ];
 }
 
-/// Cart model representing the entire cart
-class CartModel extends Equatable {
+/// Cart model representing the entire cart (Hive-compatible)
+@HiveType(typeId: 1)
+class CartModel extends HiveObject {
+  @HiveField(0)
   final List<CartItemModel> items;
 
-  const CartModel({this.items = const []});
+  @HiveField(1)
+  final DateTime? lastUpdated;
+
+  CartModel({this.items = const [], this.lastUpdated});
 
   /// Get total number of items in cart
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
@@ -207,27 +245,35 @@ class CartModel extends Equatable {
     List<CartItemModel> items = [];
 
     if (itemsList != null && itemsList is List) {
-      items =
-          itemsList
-              .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
-              .toList();
+      items = itemsList
+          .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
 
-    return CartModel(items: items);
+    return CartModel(
+      items: items,
+      lastUpdated: DateTime.now(),
+    );
   }
 
   /// Convert CartModel to JSON
   Map<String, dynamic> toJson() {
-    return {'items': items.map((e) => e.toJson()).toList()};
+    return {
+      'items': items.map((e) => e.toJson()).toList(),
+      'last_updated': lastUpdated?.toIso8601String(),
+    };
   }
 
   /// Create a copy with updated values
-  CartModel copyWith({List<CartItemModel>? items}) {
-    return CartModel(items: items ?? this.items);
+  CartModel copyWith({List<CartItemModel>? items, DateTime? lastUpdated}) {
+    return CartModel(
+      items: items ?? this.items,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
   }
 
-  @override
-  List<Object?> get props => [items];
+  /// Get props for equality
+  List<Object?> get props => [items, lastUpdated];
 }
 
 /// Add to cart request model

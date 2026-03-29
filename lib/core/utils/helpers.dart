@@ -122,6 +122,21 @@ class Helpers {
     return prefs.getBool(AppConstants.isLoggedInKey) ?? false;
   }
 
+  /// Get user data from SharedPreferences
+  static Future<UserModel?> getUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString(AppConstants.userKey);
+      if (userJson != null && userJson.isNotEmpty) {
+        final userData = jsonDecode(userJson) as Map<String, dynamic>;
+        return UserModel.fromJson(userData);
+      }
+    } catch (_) {
+      // fallback to null
+    }
+    return null;
+  }
+
   /// Get auth token
   static Future<String?> getAuthToken() async {
     final prefs = await SharedPreferences.getInstance();

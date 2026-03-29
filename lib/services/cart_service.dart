@@ -1,29 +1,57 @@
+import 'package:hive/hive.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_exceptions.dart';
 import '../core/constants/api_endpoints.dart';
 import '../models/cart_model.dart';
 
-/// Cart service for FAH Retail App
+/// Cart service for FAH Retail App with Hive caching
 class CartService {
   final ApiClient _apiClient;
+  static const String _cartBoxName = 'cart';
 
   CartService({ApiClient? apiClient})
     : _apiClient = apiClient ?? ApiClient.instance;
 
-  /// Get user's cart
-  Future<CartModel> getCart() async {
+  /// Get the cart box
+  Box<CartModel> get _cartBox => Hive.box<CartModel>(_cartBoxName);
+
+  /// Get user's cart (with Hive caching for offline support)
+  Future<CartModel> getCart({bool forceRefresh = false}) async {
+    // Return cached cart if available and not forcing refresh
+    if (!forceRefresh && _cartBox.isNotEmpty) {
+      final cached = _cartBox.get('current');
+      if (cached != null) {
+        return cached;
+      }
+    }
+
     try {
       final response = await _apiClient.get(ApiEndpoints.cart);
 
       if (response.statusCode == 200) {
-        return CartModel.fromJson(response.data);
+        final cart = CartModel.fromJson(response.data);
+        await _cacheCart(cart);
+        return cart;
       }
 
       throw ApiException('Failed to load cart');
     } catch (e) {
       if (e is ApiException) rethrow;
+      // Return cached cart on network error
+      final cached = _cartBox.get('current');
+      if (cached != null) return cached;
       throw ApiException('Failed to load cart: $e');
     }
+  }
+
+  /// Cache cart locally
+  Future<void> _cacheCart(CartModel cart) async {
+    await _cartBox.put('current', cart);
+  }
+
+  /// Clear cached cart
+  Future<void> clearCache() async {
+    await _cartBox.delete('current');
   }
 
   /// Add item to cart
@@ -37,7 +65,9 @@ class CartService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Backend returns full cart response
-        return CartModel.fromJson(response.data);
+        final cart = CartModel.fromJson(response.data);
+        await _cacheCart(cart);
+        return cart;
       }
 
       throw ApiException(response.data['message'] ?? 'Failed to add to cart');
@@ -56,7 +86,9 @@ class CartService {
       );
 
       if (response.statusCode == 200) {
-        return CartModel.fromJson(response.data);
+        final cart = CartModel.fromJson(response.data);
+        await _cacheCart(cart);
+        return cart;
       }
 
       throw ApiException(response.data['message'] ?? 'Failed to update cart');
@@ -74,7 +106,9 @@ class CartService {
       );
 
       if (response.statusCode == 200) {
-        return CartModel.fromJson(response.data);
+        final cart = CartModel.fromJson(response.data);
+        await _cacheCart(cart);
+        return cart;
       }
 
       throw ApiException(
@@ -92,7 +126,9 @@ class CartService {
       final response = await _apiClient.delete(ApiEndpoints.clearCart);
 
       if (response.statusCode == 200) {
-        return CartModel.fromJson(response.data);
+        final cart = CartModel.fromJson(response.data);
+        await _cacheCart(cart);
+        return cart;
       }
 
       throw ApiException(response.data['message'] ?? 'Failed to clear cart');

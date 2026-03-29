@@ -2,6 +2,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_exceptions.dart';
 import '../core/constants/api_endpoints.dart';
+import '../core/constants/app_constants.dart';
 
 /// Payment response model
 class PaymentOrderResponse {
@@ -46,9 +47,6 @@ class PaymentVerificationResponse {
 class PaymentService {
   final ApiClient _apiClient;
   late final Razorpay _razorpay;
-
-  // Razorpay key - should be stored securely
-  static const String _razorpayKey = 'YOUR_RAZORPAY_KEY';
 
   PaymentService({ApiClient? apiClient})
     : _apiClient = apiClient ?? ApiClient.instance {
@@ -111,7 +109,7 @@ class PaymentService {
     String? prefillName,
   }) {
     final options = {
-      'key': _razorpayKey,
+      'key': AppConstants.razorpayKey,
       'amount': amount,
       'name': name,
       'description': description,
@@ -124,8 +122,10 @@ class PaymentService {
       'theme': {
         'color': '#E91E63', // Primary pink color
       },
-      'external': {
-        'wallets': ['paytm', 'phonepe', 'amazonpay'],
+      'options': {
+        'checkout': {
+          'method': ['upi', 'card', 'netbanking', 'wallet'],
+        },
       },
     };
 

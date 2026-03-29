@@ -47,6 +47,9 @@ class AppConstants {
   static const String paymentNetBanking = 'netbanking';
   static const String paymentWallet = 'wallet';
 
+  // Razorpay
+  static const String razorpayKey = 'YOUR_RAZORPAY_KEY'; // Replace with actual key
+
   // Storage Keys
   static const String tokenKey = 'auth_token';
   static const String refreshTokenKey = 'refresh_token';

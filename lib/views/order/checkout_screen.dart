@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/helpers.dart';
 import '../../models/cart_model.dart';
 import '../../models/address_model.dart';
 import '../../models/order_model.dart';
+import '../../models/user_model.dart';
 import '../../presenters/order_presenter.dart';
 import '../../services/address_service.dart';
 import '../../services/payment_service.dart';
@@ -40,6 +42,8 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   void initState() {
     super.initState();
     _orderPresenter.attachCheckoutView(this);
+    // Set default payment method
+    _orderPresenter.selectPaymentMethod('upi');
     _loadAddresses();
     _initPayment();
   }
@@ -59,6 +63,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
           (a) => a.isDefault,
           orElse: () => _addresses.first,
         );
+        _orderPresenter.selectAddress(_selectedAddress!);
       }
     } catch (e) {
       // Handle error
@@ -106,6 +111,12 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     setState(() => _isPlacingOrder = true);
 
     try {
+      // Get user data for payment
+      final user = await Helpers.getUserData();
+      final userName = user?.name ?? '';
+      final userEmail = user?.email ?? '';
+      final userPhone = user?.phone ?? '';
+
       // Create Razorpay order
       final razorpayOrder = await _paymentService.createPaymentOrder(
         amount: _total,
@@ -119,8 +130,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         amount: razorpayOrder.amount,
         name: 'FAH Retail',
         description: 'Order payment',
-        email: '', // TODO: Get from user profile
-        phone: '', // TODO: Get from user profile
+        email: userEmail,
+        phone: userPhone,
+        prefillName: userName,
       );
     } catch (e) {
       setState(() => _isPlacingOrder = false);
@@ -131,14 +143,17 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   }
 
   Future<void> _completeOrder(String paymentId) async {
-    // Create order request payload and call presenter.
-    // NOTE: Request object is not consumed by presenter directly yet.
+    // Get user data for order
+    final user = await Helpers.getUserData();
+    final userName = user?.name ?? '';
+    final userEmail = user?.email ?? '';
+    final userPhone = user?.phone ?? '';
 
     await _orderPresenter.placeOrder(
       amount: _total,
-      email: '', // TODO: Get from user profile
-      phone: '', // TODO: Get from user profile
-      name: '', // TODO: Get from user profile
+      email: userEmail,
+      phone: userPhone,
+      name: userName,
     );
   }
 
@@ -152,6 +167,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             selectedAddress: _selectedAddress,
             onSelected: (address) {
               setState(() => _selectedAddress = address);
+              _orderPresenter.selectAddress(address);
               Navigator.pop(context);
             },
             onAddNew: () {
