@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 
 from app.database import get_db
-from app.models import User, Product, ProductImage, Category, Order, OrderItem, OrderStatusHistory, OrderStatus, UserRole
-from app.schemas import ProductCreate, ProductUpdate, OrderStatusUpdate, DashboardStatsResponse
+from app.models import User, Product, ProductImage, Category, Order, OrderItem, OrderStatusHistory, OrderStatus, UserRole, Banner
+from app.schemas import ProductCreate, ProductUpdate, OrderStatusUpdate, DashboardStatsResponse, BannerCreate, BannerUpdate, BannerResponse
 from app.utils.auth import get_admin_user
 from app.utils.cloudinary import upload_image, upload_multiple_images, delete_image
 from app.routes.products import product_to_response
@@ -396,3 +396,179 @@ async def update_order_status(
     db.commit()
 
     return {"success": True, "message": "Order status updated"}
+
+
+# ============ Banner Management ============
+
+def banner_to_response(banner: Banner) -> dict:
+    """Convert Banner model to response dict."""
+    return {
+        "id": banner.id,
+        "title": banner.title,
+        "description": banner.description,
+        "image_url": banner.image_url,
+        "link": banner.link,
+        "discount_text": banner.discount_text,
+        "discount_percent": banner.discount_percent,
+        "button_text": banner.button_text,
+        "sort_order": banner.sort_order,
+        "is_active": banner.is_active,
+        "created_at": banner.created_at.isoformat() if banner.created_at else None,
+        "updated_at": banner.updated_at.isoformat() if banner.updated_at else None,
+    }
+
+
+@router.get("/banners")
+async def get_admin_banners(
+    include_inactive: bool = Query(False),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Get all banners for admin."""
+    query = db.query(Banner)
+    
+    if not include_inactive:
+        query = query.filter(Banner.is_active == True)
+    
+    banners = query.order_by(Banner.sort_order.asc()).all()
+    
+    return {
+        "items": [banner_to_response(b) for b in banners],
+        "total": len(banners),
+    }
+
+
+@router.get("/banners/{banner_id}")
+async def get_admin_banner(
+    banner_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Get banner by ID."""
+    banner = db.query(Banner).filter(Banner.id == banner_id).first()
+    
+    if not banner:
+        raise HTTPException(status_code=404, detail="Banner not found")
+    
+    return banner_to_response(banner)
+
+
+@router.post("/banners")
+async def create_banner(
+    request: BannerCreate,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Create new banner."""
+    banner = Banner(
+        title=request.title,
+        description=request.description,
+        image_url=request.image_url,
+        link=request.link,
+        discount_text=request.discount_text,
+        discount_percent=request.discount_percent,
+        button_text=request.button_text,
+        sort_order=request.sort_order,
+        is_active=request.is_active,
+    )
+    db.add(banner)
+    db.commit()
+    db.refresh(banner)
+    
+    return banner_to_response(banner)
+
+
+@router.put("/banners/{banner_id}")
+async def update_banner(
+    banner_id: int,
+    request: BannerUpdate,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Update banner."""
+    banner = db.query(Banner).filter(Banner.id == banner_id).first()
+    
+    if not banner:
+        raise HTTPException(status_code=404, detail="Banner not found")
+    
+    if request.title is not None:
+        banner.title = request.title
+    if request.description is not None:
+        banner.description = request.description
+    if request.image_url is not None:
+        banner.image_url = request.image_url
+    if request.link is not None:
+        banner.link = request.link
+    if request.discount_text is not None:
+        banner.discount_text = request.discount_text
+    if request.discount_percent is not None:
+        banner.discount_percent = request.discount_percent
+    if request.button_text is not None:
+        banner.button_text = request.button_text
+    if request.sort_order is not None:
+        banner.sort_order = request.sort_order
+    if request.is_active is not None:
+        banner.is_active = request.is_active
+    
+    db.commit()
+    db.refresh(banner)
+    
+    return banner_to_response(banner)
+
+
+@router.delete("/banners/{banner_id}")
+async def delete_banner(
+    banner_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Delete banner (soft delete)."""
+    banner = db.query(Banner).filter(Banner.id == banner_id).first()
+    
+    if not banner:
+        raise HTTPException(status_code=404, detail="Banner not found")
+    
+    banner.is_active = False
+    db.commit()
+    
+    return {"success": True, "message": "Banner deleted"}
+
+
+@router.post("/banners/{banner_id}/upload-image")
+async def upload_banner_image(
+    banner_id: int,
+    file: UploadFile = File(...),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Upload image for banner."""
+    banner = db.query(Banner).filter(Banner.id == banner_id).first()
+    
+    if not banner:
+        raise HTTPException(status_code=404, detail="Banner not found")
+    
+    # Upload to Cloudinary
+    result = await upload_image(file, folder="banners")
+    
+    # Update banner image URL
+    banner.image_url = result["url"]
+    db.commit()
+    
+    return {
+        "success": True,
+        "image_url": result["url"],
+    }
+
+
+@router.post("/banners/upload-image")
+async def upload_new_banner_image(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_admin_user),
+):
+    """Upload image for new banner (before creating)."""
+    result = await upload_image(file, folder="banners")
+    
+    return {
+        "success": True,
+        "image_url": result["url"],
+    }

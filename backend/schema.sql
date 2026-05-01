@@ -3,6 +3,7 @@
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS fah_retail;
+
 USE fah_retail;
 
 -- =====================================================
@@ -50,7 +51,7 @@ CREATE TABLE IF NOT EXISTS categories (
     is_active BOOLEAN DEFAULT TRUE,
     sort_order INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_id) REFERENCES categories (id) ON DELETE SET NULL,
     INDEX idx_parent (parent_id),
     INDEX idx_active (is_active)
 );
@@ -72,7 +73,7 @@ CREATE TABLE IF NOT EXISTS products (
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE,
     INDEX idx_category (category_id),
     INDEX idx_trending (is_trending),
     INDEX idx_active (is_active),
@@ -90,7 +91,7 @@ CREATE TABLE IF NOT EXISTS product_images (
     is_primary BOOLEAN DEFAULT FALSE,
     sort_order INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
     INDEX idx_product (product_id),
     INDEX idx_primary (is_primary)
 );
@@ -110,7 +111,7 @@ CREATE TABLE IF NOT EXISTS addresses (
     is_default BOOLEAN DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     INDEX idx_user (user_id),
     INDEX idx_default (is_default)
 );
@@ -125,8 +126,8 @@ CREATE TABLE IF NOT EXISTS cart (
     quantity INT NOT NULL DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
     UNIQUE KEY unique_cart_item (user_id, product_id),
     INDEX idx_user (user_id)
 );
@@ -143,16 +144,27 @@ CREATE TABLE IF NOT EXISTS orders (
     discount_amount DECIMAL(10, 2) DEFAULT 0,
     delivery_fee DECIMAL(10, 2) DEFAULT 0,
     payment_method VARCHAR(50) NOT NULL,
-    payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+    payment_status ENUM(
+        'pending',
+        'paid',
+        'failed',
+        'refunded'
+    ) DEFAULT 'pending',
     razorpay_order_id VARCHAR(100),
     razorpay_payment_id VARCHAR(100),
     razorpay_signature VARCHAR(500),
-    status ENUM('pending', 'order_placed', 'in_transit', 'delivered', 'cancelled') DEFAULT 'pending',
+    status ENUM(
+        'pending',
+        'order_placed',
+        'in_transit',
+        'delivered',
+        'cancelled'
+    ) DEFAULT 'pending',
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (address_id) REFERENCES addresses(id),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (address_id) REFERENCES addresses (id),
     INDEX idx_user (user_id),
     INDEX idx_order_number (order_number),
     INDEX idx_status (status),
@@ -173,8 +185,8 @@ CREATE TABLE IF NOT EXISTS order_items (
     price DECIMAL(10, 2) NOT NULL,
     discount_price DECIMAL(10, 2),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products (id),
     INDEX idx_order (order_id)
 );
 
@@ -188,8 +200,8 @@ CREATE TABLE IF NOT EXISTS order_status_history (
     note TEXT,
     created_by INT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users (id),
     INDEX idx_order (order_id),
     INDEX idx_timestamp (timestamp)
 );
@@ -200,11 +212,16 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 CREATE TABLE IF NOT EXISTS banners (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200),
+    description VARCHAR(500),
     image_url VARCHAR(500) NOT NULL,
     link VARCHAR(500),
+    discount_text VARCHAR(100),
+    discount_percent INT DEFAULT NULL,
+    button_text VARCHAR(50) DEFAULT 'Shop Now',
     sort_order INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_active (is_active),
     INDEX idx_order (sort_order)
 );
@@ -212,80 +229,245 @@ CREATE TABLE IF NOT EXISTS banners (
 -- =====================================================
 -- INSERT DEFAULT CATEGORIES
 -- =====================================================
-INSERT INTO categories (name, parent_id, sort_order) VALUES
-('Hair band', NULL, 1),
-('Hair pins', NULL, 2),
-('Saree pins', NULL, 3),
-('Clips', NULL, 4),
-('Necklace', NULL, 5),
-('Bracelet', NULL, 6),
-('Rings', NULL, 7),
-('Watches', NULL, 8),
-('Fancy mirror', NULL, 9),
-('Earrings', NULL, 10);
+INSERT INTO
+    categories (name, parent_id, sort_order)
+VALUES ('Hair band', NULL, 1),
+    ('Hair pins', NULL, 2),
+    ('Saree pins', NULL, 3),
+    ('Clips', NULL, 4),
+    ('Necklace', NULL, 5),
+    ('Bracelet', NULL, 6),
+    ('Rings', NULL, 7),
+    ('Watches', NULL, 8),
+    ('Fancy mirror', NULL, 9),
+    ('Earrings', NULL, 10);
 
 -- Get Earrings category ID and insert subcategories
-SET @earrings_id = (SELECT id FROM categories WHERE name = 'Earrings');
+SET
+    @earrings_id = (
+        SELECT id
+        FROM categories
+        WHERE
+            name = 'Earrings'
+    );
 
-INSERT INTO categories (name, parent_id, sort_order) VALUES
-('Crystal earrings', @earrings_id, 1),
-('Long earrings', @earrings_id, 2),
-('Short earrings', @earrings_id, 3),
-('Round earrings', @earrings_id, 4),
-('Rose gold earrings', @earrings_id, 5),
-('Silver plated earrings', @earrings_id, 6),
-('Gold plated earrings', @earrings_id, 7);
+INSERT INTO
+    categories (name, parent_id, sort_order)
+VALUES (
+        'Crystal earrings',
+        @earrings_id,
+        1
+    ),
+    (
+        'Long earrings',
+        @earrings_id,
+        2
+    ),
+    (
+        'Short earrings',
+        @earrings_id,
+        3
+    ),
+    (
+        'Round earrings',
+        @earrings_id,
+        4
+    ),
+    (
+        'Rose gold earrings',
+        @earrings_id,
+        5
+    ),
+    (
+        'Silver plated earrings',
+        @earrings_id,
+        6
+    ),
+    (
+        'Gold plated earrings',
+        @earrings_id,
+        7
+    );
 
 -- =====================================================
 -- INSERT ADMIN USER (password: admin123)
 -- =====================================================
-INSERT INTO users (name, phone, email, role) VALUES
-('Admin', '9999999999', 'admin@fahretail.com', 'admin');
+INSERT INTO
+    users (name, phone, email, role)
+VALUES (
+        'Admin',
+        '9999999999',
+        'admin@fahretail.com',
+        'admin'
+    );
 
 -- =====================================================
 -- INSERT SAMPLE PRODUCTS
 -- =====================================================
-INSERT INTO products (name, description, category_id, price, discount_price, qty, is_trending, primary_image) VALUES
-('Crystal Drop Earrings', 'Beautiful crystal drop earrings perfect for any occasion', 11, 499.00, 399.00, 50, TRUE, 'https://res.cloudinary.com/demo/image/upload/v1/products/earring1.jpg'),
-('Gold Plated Necklace Set', 'Elegant gold plated necklace with matching earrings', 5, 1299.00, 999.00, 30, TRUE, 'https://res.cloudinary.com/demo/image/upload/v1/products/necklace1.jpg'),
-('Silver Charm Bracelet', 'Delicate silver charm bracelet with heart pendants', 6, 599.00, NULL, 45, FALSE, 'https://res.cloudinary.com/demo/image/upload/v1/products/bracelet1.jpg'),
-('Floral Hair Clips Set', 'Set of 6 beautiful floral hair clips', 4, 299.00, 249.00, 100, TRUE, 'https://res.cloudinary.com/demo/image/upload/v1/products/clips1.jpg'),
-('Designer Hair Band', 'Premium designer hair band with pearl accents', 1, 399.00, NULL, 60, FALSE, 'https://res.cloudinary.com/demo/image/upload/v1/products/hairband1.jpg'),
-('Rose Gold Hoop Earrings', 'Trendy rose gold hoop earrings', 15, 799.00, 649.00, 40, TRUE, 'https://res.cloudinary.com/demo/image/upload/v1/products/earring2.jpg');
+INSERT INTO
+    products (
+        name,
+        description,
+        category_id,
+        price,
+        discount_price,
+        qty,
+        is_trending,
+        primary_image
+    )
+VALUES (
+        'Crystal Drop Earrings',
+        'Beautiful crystal drop earrings perfect for any occasion',
+        11,
+        499.00,
+        399.00,
+        50,
+        TRUE,
+        'https://res.cloudinary.com/demo/image/upload/v1/products/earring1.jpg'
+    ),
+    (
+        'Gold Plated Necklace Set',
+        'Elegant gold plated necklace with matching earrings',
+        5,
+        1299.00,
+        999.00,
+        30,
+        TRUE,
+        'https://res.cloudinary.com/demo/image/upload/v1/products/necklace1.jpg'
+    ),
+    (
+        'Silver Charm Bracelet',
+        'Delicate silver charm bracelet with heart pendants',
+        6,
+        599.00,
+        NULL,
+        45,
+        FALSE,
+        'https://res.cloudinary.com/demo/image/upload/v1/products/bracelet1.jpg'
+    ),
+    (
+        'Floral Hair Clips Set',
+        'Set of 6 beautiful floral hair clips',
+        4,
+        299.00,
+        249.00,
+        100,
+        TRUE,
+        'https://res.cloudinary.com/demo/image/upload/v1/products/clips1.jpg'
+    ),
+    (
+        'Designer Hair Band',
+        'Premium designer hair band with pearl accents',
+        1,
+        399.00,
+        NULL,
+        60,
+        FALSE,
+        'https://res.cloudinary.com/demo/image/upload/v1/products/hairband1.jpg'
+    ),
+    (
+        'Rose Gold Hoop Earrings',
+        'Trendy rose gold hoop earrings',
+        15,
+        799.00,
+        649.00,
+        40,
+        TRUE,
+        'https://res.cloudinary.com/demo/image/upload/v1/products/earring2.jpg'
+    );
 
 -- =====================================================
 -- INSERT SAMPLE BANNERS
 -- =====================================================
-INSERT INTO banners (title, image_url, sort_order, is_active) VALUES
-('New Arrivals', 'https://res.cloudinary.com/demo/image/upload/v1/banners/banner1.jpg', 1, TRUE),
-('Summer Sale - Up to 50% Off', 'https://res.cloudinary.com/demo/image/upload/v1/banners/banner2.jpg', 2, TRUE),
-('Trending Collection', 'https://res.cloudinary.com/demo/image/upload/v1/banners/banner3.jpg', 3, TRUE);
+INSERT INTO
+    banners (
+        title,
+        description,
+        image_url,
+        link,
+        discount_text,
+        discount_percent,
+        button_text,
+        sort_order,
+        is_active
+    )
+VALUES (
+        'New Arrivals',
+        'Explore our latest collection of accessories',
+        'https://picsum.photos/seed/banner1/800/400',
+        '/products?filter=new',
+        NULL,
+        NULL,
+        'Shop Now',
+        1,
+        TRUE
+    ),
+    (
+        'Summer Sale',
+        'Get amazing discounts on selected items',
+        'https://picsum.photos/seed/banner2/800/400',
+        '/products?filter=sale',
+        'Up to 50% Off',
+        50,
+        'Grab Now',
+        2,
+        TRUE
+    ),
+    (
+        'Trending Collection',
+        'Discover what everyone is wearing',
+        'https://picsum.photos/seed/banner3/800/400',
+        '/products?filter=trending',
+        NULL,
+        NULL,
+        'Explore',
+        3,
+        TRUE
+    );
 
 -- =====================================================
 -- VIEWS FOR REPORTING (Optional)
 -- =====================================================
 CREATE OR REPLACE VIEW v_order_summary AS
-SELECT 
+SELECT
     DATE(o.created_at) as order_date,
     COUNT(*) as total_orders,
     SUM(o.total_amount) as total_revenue,
-    SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
-    SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders
+    SUM(
+        CASE
+            WHEN o.status = 'delivered' THEN 1
+            ELSE 0
+        END
+    ) as delivered_orders,
+    SUM(
+        CASE
+            WHEN o.status = 'cancelled' THEN 1
+            ELSE 0
+        END
+    ) as cancelled_orders
 FROM orders o
-GROUP BY DATE(o.created_at);
+GROUP BY
+    DATE(o.created_at);
 
 CREATE OR REPLACE VIEW v_top_products AS
-SELECT 
+SELECT
     p.id,
     p.name,
     p.primary_image,
     SUM(oi.qty) as total_sold,
-    SUM(oi.qty * COALESCE(oi.discount_price, oi.price)) as total_revenue
-FROM products p
-JOIN order_items oi ON p.id = oi.product_id
-JOIN orders o ON oi.order_id = o.id
-WHERE o.status != 'cancelled'
-GROUP BY p.id, p.name, p.primary_image
+    SUM(
+        oi.qty * COALESCE(oi.discount_price, oi.price)
+    ) as total_revenue
+FROM
+    products p
+    JOIN order_items oi ON p.id = oi.product_id
+    JOIN orders o ON oi.order_id = o.id
+WHERE
+    o.status != 'cancelled'
+GROUP BY
+    p.id,
+    p.name,
+    p.primary_image
 ORDER BY total_sold DESC;
 
 -- Done!

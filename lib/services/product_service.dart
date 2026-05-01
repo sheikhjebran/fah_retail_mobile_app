@@ -56,8 +56,9 @@ class ProductService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['items'] ?? response.data;
-        return data
+        final data = response.data;
+        final List<dynamic> items = data is List ? data : (data['items'] ?? []);
+        return items
             .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }
@@ -80,8 +81,9 @@ class ProductService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['items'] ?? response.data;
-        return data
+        final data = response.data;
+        final List<dynamic> items = data is List ? data : (data['items'] ?? []);
+        return items
             .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }
@@ -118,8 +120,9 @@ class ProductService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['items'] ?? response.data;
-        return data
+        final data = response.data;
+        final List<dynamic> items = data is List ? data : (data['items'] ?? []);
+        return items
             .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }

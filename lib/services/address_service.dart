@@ -16,8 +16,9 @@ class AddressService {
       final response = await _apiClient.get(ApiEndpoints.addresses);
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['items'] ?? response.data;
-        return data
+        final data = response.data;
+        final List<dynamic> items = data is List ? data : (data['items'] ?? []);
+        return items
             .map((e) => AddressModel.fromJson(e as Map<String, dynamic>))
             .toList();
       }

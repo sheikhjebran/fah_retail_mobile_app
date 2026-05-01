@@ -5,17 +5,29 @@ class BannerModel extends Equatable {
   final int id;
   final String imageUrl;
   final String? title;
+  final String? description;
   final String? link;
-  final int order;
+  final String? discountText;
+  final int? discountPercent;
+  final String? buttonText;
+  final int sortOrder;
   final bool isActive;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const BannerModel({
     required this.id,
     required this.imageUrl,
     this.title,
+    this.description,
     this.link,
-    this.order = 0,
+    this.discountText,
+    this.discountPercent,
+    this.buttonText,
+    this.sortOrder = 0,
     this.isActive = true,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory BannerModel.fromJson(Map<String, dynamic> json) {
@@ -23,9 +35,21 @@ class BannerModel extends Equatable {
       id: json['id'] as int,
       imageUrl: json['image_url'] as String,
       title: json['title'] as String?,
+      description: json['description'] as String?,
       link: json['link'] as String?,
-      order: json['order'] as int? ?? 0,
+      discountText: json['discount_text'] as String?,
+      discountPercent: json['discount_percent'] as int?,
+      buttonText: json['button_text'] as String?,
+      sortOrder: json['sort_order'] as int? ?? 0,
       isActive: json['is_active'] as bool? ?? true,
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'] as String)
+              : null,
+      updatedAt:
+          json['updated_at'] != null
+              ? DateTime.tryParse(json['updated_at'] as String)
+              : null,
     );
   }
 
@@ -34,14 +58,59 @@ class BannerModel extends Equatable {
       'id': id,
       'image_url': imageUrl,
       'title': title,
+      'description': description,
       'link': link,
-      'order': order,
+      'discount_text': discountText,
+      'discount_percent': discountPercent,
+      'button_text': buttonText,
+      'sort_order': sortOrder,
       'is_active': isActive,
     };
   }
 
+  BannerModel copyWith({
+    int? id,
+    String? imageUrl,
+    String? title,
+    String? description,
+    String? link,
+    String? discountText,
+    int? discountPercent,
+    String? buttonText,
+    int? sortOrder,
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return BannerModel(
+      id: id ?? this.id,
+      imageUrl: imageUrl ?? this.imageUrl,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      link: link ?? this.link,
+      discountText: discountText ?? this.discountText,
+      discountPercent: discountPercent ?? this.discountPercent,
+      buttonText: buttonText ?? this.buttonText,
+      sortOrder: sortOrder ?? this.sortOrder,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   @override
-  List<Object?> get props => [id, imageUrl, title, link, order, isActive];
+  List<Object?> get props => [
+    id,
+    imageUrl,
+    title,
+    description,
+    link,
+    discountText,
+    discountPercent,
+    buttonText,
+    sortOrder,
+    isActive,
+  ];
 }
 
 /// Admin dashboard stats model

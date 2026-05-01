@@ -355,12 +355,47 @@ class VerifyPaymentRequest(BaseModel):
 # =====================================================
 # BANNER SCHEMAS
 # =====================================================
+class BannerBase(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_url: str
+    link: Optional[str] = None
+    discount_text: Optional[str] = None
+    discount_percent: Optional[int] = None
+    button_text: Optional[str] = "Shop Now"
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class BannerCreate(BannerBase):
+    pass
+
+
+class BannerUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    link: Optional[str] = None
+    discount_text: Optional[str] = None
+    discount_percent: Optional[int] = None
+    button_text: Optional[str] = None
+    sort_order: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
 class BannerResponse(BaseModel):
     id: int
     title: Optional[str] = None
+    description: Optional[str] = None
     image_url: str
     link: Optional[str] = None
+    discount_text: Optional[str] = None
+    discount_percent: Optional[int] = None
+    button_text: Optional[str] = None
     sort_order: int
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

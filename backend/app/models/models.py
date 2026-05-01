@@ -234,8 +234,13 @@ class Banner(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200))
+    description = Column(String(500))
     image_url = Column(String(500), nullable=False)
     link = Column(String(500))
+    discount_text = Column(String(100))
+    discount_percent = Column(Integer)
+    button_text = Column(String(50), default="Shop Now")
     sort_order = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

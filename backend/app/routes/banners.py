@@ -22,8 +22,12 @@ async def get_banners(db: Session = Depends(get_db)):
         {
             "id": banner.id,
             "title": banner.title,
+            "description": banner.description,
             "image_url": banner.image_url,
             "link": banner.link,
+            "discount_text": banner.discount_text,
+            "discount_percent": banner.discount_percent,
+            "button_text": banner.button_text,
             "sort_order": banner.sort_order,
         }
         for banner in banners
