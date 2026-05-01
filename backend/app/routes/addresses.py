@@ -24,13 +24,18 @@ async def get_addresses(
     return [
         {
             "id": addr.id,
+            "user_id": addr.user_id,
             "name": addr.name,
             "phone": addr.phone,
+            "building_number": addr.building_number,
             "address": addr.address,
+            "landmark": addr.landmark,
             "city": addr.city,
             "state": addr.state,
             "pincode": addr.pincode,
+            "alternate_phone": addr.alternate_phone,
             "is_default": addr.is_default,
+            "created_at": addr.created_at.isoformat() if addr.created_at else None,
         }
         for addr in addresses
     ]
@@ -58,10 +63,13 @@ async def add_address(
         user_id=current_user.id,
         name=request.name,
         phone=request.phone,
+        building_number=request.building_number,
         address=request.address,
+        landmark=request.landmark,
         city=request.city,
         state=request.state,
         pincode=request.pincode,
+        alternate_phone=request.alternate_phone,
         is_default=request.is_default or existing_count == 0,
     )
     db.add(address)
@@ -70,13 +78,18 @@ async def add_address(
 
     return {
         "id": address.id,
+        "user_id": address.user_id,
         "name": address.name,
         "phone": address.phone,
+        "building_number": address.building_number,
         "address": address.address,
+        "landmark": address.landmark,
         "city": address.city,
         "state": address.state,
         "pincode": address.pincode,
+        "alternate_phone": address.alternate_phone,
         "is_default": address.is_default,
+        "created_at": address.created_at.isoformat() if address.created_at else None,
     }
 
 
@@ -97,18 +110,24 @@ async def update_address(
         raise HTTPException(status_code=404, detail="Address not found")
 
     # Update fields
-    if request.name:
+    if request.name is not None:
         address.name = request.name
-    if request.phone:
+    if request.phone is not None:
         address.phone = request.phone
-    if request.address:
+    if request.building_number is not None:
+        address.building_number = request.building_number
+    if request.address is not None:
         address.address = request.address
-    if request.city:
+    if request.landmark is not None:
+        address.landmark = request.landmark
+    if request.city is not None:
         address.city = request.city
-    if request.state:
+    if request.state is not None:
         address.state = request.state
-    if request.pincode:
+    if request.pincode is not None:
         address.pincode = request.pincode
+    if request.alternate_phone is not None:
+        address.alternate_phone = request.alternate_phone
 
     if request.is_default:
         # Unset other defaults
@@ -123,13 +142,18 @@ async def update_address(
 
     return {
         "id": address.id,
+        "user_id": address.user_id,
         "name": address.name,
         "phone": address.phone,
+        "building_number": address.building_number,
         "address": address.address,
+        "landmark": address.landmark,
         "city": address.city,
         "state": address.state,
         "pincode": address.pincode,
+        "alternate_phone": address.alternate_phone,
         "is_default": address.is_default,
+        "created_at": address.created_at.isoformat() if address.created_at else None,
     }
 
 
