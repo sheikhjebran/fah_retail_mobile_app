@@ -22,7 +22,7 @@ class CartPresenter {
   final CartService _cartService;
   CartView? _view;
 
-  CartModel _cart = const CartModel();
+  CartModel _cart = CartModel();
   bool _isLoading = false;
 
   CartPresenter({CartService? cartService})

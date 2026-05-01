@@ -4,7 +4,7 @@ class ApiEndpoints {
 
   // Base URL - Change this for production
   // Use your PC's local IP for physical device testing
-  static const String baseUrl = 'http://192.168.1.17:8000/api';
+  static const String baseUrl = 'http://192.168.1.12:8000/api';
 
   // Authentication
   static const String sendOtp = '/auth/send-otp';
@@ -15,8 +15,8 @@ class ApiEndpoints {
   static const String refreshToken = '/auth/refresh';
 
   // User Profile
-  static const String profile = '/users/profile';
-  static const String updateProfile = '/users/profile';
+  static const String profile = '/users/me';
+  static const String updateProfile = '/users/me';
 
   // Products
   static const String products = '/products';

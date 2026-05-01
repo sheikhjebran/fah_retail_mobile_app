@@ -23,5 +23,6 @@
   "debug.console.wordWrap": true,
   "debug.openExplorerOnEnd": false,
   "debug.showInStatusBar": "always",
-  "cmake.sourceDirectory": "/Users/jebran/Documents/GitHub/fah_retail_mobile_app/linux"
+  "cmake.sourceDirectory": "/Users/jebran/Documents/GitHub/fah_retail_mobile_app/linux",
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

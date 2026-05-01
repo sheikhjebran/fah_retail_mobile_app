@@ -131,7 +131,7 @@ class _CartScreenState extends State<CartScreen> implements CartView {
 
   @override
   void showCartCleared() {
-    setState(() => _cart = const CartModel());
+    setState(() => _cart = CartModel());
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Cart cleared')));
@@ -139,7 +139,7 @@ class _CartScreenState extends State<CartScreen> implements CartView {
 
   @override
   void showEmptyCart() {
-    setState(() => _cart = const CartModel());
+    setState(() => _cart = CartModel());
   }
 
   @override
@@ -357,7 +357,7 @@ class _CartItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.productName,
+                  item.productNameValue,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(
@@ -366,7 +366,7 @@ class _CartItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  Formatters.formatPrice(item.price),
+                  Formatters.formatPrice(item.displayPrice),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -413,7 +413,7 @@ class _CartItemCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      Formatters.formatPrice(item.subtotal),
+                      Formatters.formatPrice(item.totalPrice),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

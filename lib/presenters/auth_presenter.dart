@@ -134,8 +134,8 @@ class AuthPresenter {
         sessionId: _currentSessionId,
       );
 
-      // Save auth data
-      await Helpers.saveAuthToken(response.token);
+      // Save auth data with user
+      await Helpers.saveAuthToken(response.token, user: response.user);
 
       _loginView?.hideLoading();
       _otpView?.hideLoading();
@@ -181,8 +181,8 @@ class AuthPresenter {
         pincode: pincode,
       );
 
-      // Save auth data
-      await Helpers.saveAuthToken(response.token);
+      // Save auth data with user
+      await Helpers.saveAuthToken(response.token, user: response.user);
 
       _signupView?.hideLoading();
       _signupView?.showSignupSuccess(response.user);

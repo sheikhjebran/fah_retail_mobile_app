@@ -404,13 +404,13 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        item.productName,
+                        item.productNameValue,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Text(
-                      Formatters.formatPriceInt(item.subtotal),
+                      Formatters.formatPriceInt(item.totalPrice),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],

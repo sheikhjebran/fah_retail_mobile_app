@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/helpers.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
@@ -33,7 +34,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       _user = await _authService.getProfile();
     } catch (e) {
-      // Handle error
+      // Try to load from local storage as fallback
+      _user = await Helpers.getUserData();
+      if (mounted && _user == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -267,7 +274,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const Text(
                               'FAH Retail is your one-stop shop for all types of '
                               'fashion accessories including earrings, necklaces, '
-                              'bracelets, hair accessories, and more.',
+                              'bracelets, hair accessories, and more.\n\n'
+                              'Developer: sheikhjebran@gmail.com',
                             ),
                           ],
                         );

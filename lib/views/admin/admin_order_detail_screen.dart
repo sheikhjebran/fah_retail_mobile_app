@@ -42,6 +42,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
     );
 
     if (status != null && status != _order!.status) {
+      setState(() => _isUpdating = true);
       await _presenter.updateOrderStatus(widget.orderId, status);
     }
   }
@@ -58,22 +59,19 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
   }
 
   @override
-  void showOrderDetail(OrderModel order) {
+  void showOrder(OrderModel order) {
     setState(() => _order = order);
   }
 
   @override
-  void showUpdateStatusSuccess() {
-    setState(() => _isUpdating = false);
+  void showStatusUpdated(OrderModel order) {
+    setState(() {
+      _isUpdating = false;
+      _order = order;
+    });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Order status updated successfully')),
     );
-    _presenter.loadOrderDetail(widget.orderId);
-  }
-
-  @override
-  void showUpdateStatusLoading() {
-    setState(() => _isUpdating = true);
   }
 
   @override
@@ -334,7 +332,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
                                 item.productImage!,
                                 fit: BoxFit.cover,
                                 errorBuilder:
-                                    (_, _, _) => const Icon(
+                                    (context, error, stackTrace) => const Icon(
                                       Icons.image,
                                       color: AppColors.textSecondary,
                                     ),
@@ -415,7 +413,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
           _buildPriceRow(
             'Payment Method',
             0,
-            label: _order!.paymentMethod.toUpperCase(),
+            customLabel: _order!.paymentMethod.toUpperCase(),
             isBold: false,
           ),
         ],
@@ -427,7 +425,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
     String label,
     double amount, {
     bool isBold = false,
-    String? label,
+    String? customLabel,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -439,7 +437,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
           ),
         ),
         Text(
-          label ?? Formatters.formatPriceInt(amount),
+          customLabel ?? Formatters.formatPriceInt(amount),
           style: TextStyle(
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             color: amount < 0 ? AppColors.success : null,
