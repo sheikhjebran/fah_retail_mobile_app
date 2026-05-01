@@ -315,6 +315,7 @@ class _HomeScreenState extends State<HomeScreen> implements HomeProductsView {
                 product: product,
                 onTap: () => _navigateToProductDetail(product),
                 onAddToCart: () => _addToCart(product),
+                isAddingToCart: _addingToCart.contains(product.id),
               ),
             ),
           );

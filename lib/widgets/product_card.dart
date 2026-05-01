@@ -10,6 +10,7 @@ class ProductCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
   final bool showAddToCart;
+  final bool isAddingToCart;
 
   const ProductCard({
     super.key,
@@ -17,6 +18,7 @@ class ProductCard extends StatelessWidget {
     this.onTap,
     this.onAddToCart,
     this.showAddToCart = true,
+    this.isAddingToCart = false,
   });
 
   @override
@@ -201,7 +203,25 @@ class ProductCard extends StatelessWidget {
                         const Spacer(),
 
                         // Add to cart button
-                        if (showAddToCart &&
+                        if (showAddToCart && product.inStock && isAddingToCart)
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (showAddToCart &&
                             product.inStock &&
                             onAddToCart != null)
                           GestureDetector(
@@ -263,12 +283,14 @@ class ProductGridCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
+  final bool isAddingToCart;
 
   const ProductGridCard({
     super.key,
     required this.product,
     this.onTap,
     this.onAddToCart,
+    this.isAddingToCart = false,
   });
 
   @override
@@ -277,6 +299,7 @@ class ProductGridCard extends StatelessWidget {
       product: product,
       onTap: onTap,
       onAddToCart: onAddToCart,
+      isAddingToCart: isAddingToCart,
     );
   }
 }

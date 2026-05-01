@@ -235,18 +235,34 @@ class _AddressCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            address.phone,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          const SizedBox(height: 12),
+          // Building number
+          if (address.buildingNumber != null &&
+              address.buildingNumber!.isNotEmpty)
+            _buildInfoRow(Icons.apartment, 'Building', address.buildingNumber!),
+          // Street address
+          _buildInfoRow(Icons.location_on_outlined, 'Address', address.address),
+          // Landmark
+          if (address.landmark != null && address.landmark!.isNotEmpty)
+            _buildInfoRow(Icons.place_outlined, 'Landmark', address.landmark!),
+          // City & State
+          _buildInfoRow(
+            Icons.location_city,
+            'Location',
+            '${address.city}, ${address.state}',
           ),
-          const SizedBox(height: 4),
-          Text(
-            address.formattedAddress,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          // Pincode
+          _buildInfoRow(Icons.pin_drop_outlined, 'Pincode', address.pincode),
+          // Phone
+          _buildInfoRow(Icons.phone_outlined, 'Phone', address.phone),
+          // Alternate phone
+          if (address.alternatePhone != null &&
+              address.alternatePhone!.isNotEmpty)
+            _buildInfoRow(
+              Icons.phone_android,
+              'Alt. Phone',
+              address.alternatePhone!,
+            ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -260,6 +276,7 @@ class _AddressCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
               ],
+              const Spacer(),
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 20),
                 onPressed: onEdit,
@@ -272,6 +289,20 @@ class _AddressCard extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: AppColors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -294,10 +325,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _buildingNumberController = TextEditingController();
   final _addressController = TextEditingController();
+  final _landmarkController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _pincodeController = TextEditingController();
+  final _alternatePhoneController = TextEditingController();
 
   bool _isDefault = false;
   bool _isSaving = false;
@@ -310,10 +344,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     if (widget.address != null) {
       _nameController.text = widget.address!.name;
       _phoneController.text = widget.address!.phone;
+      _buildingNumberController.text = widget.address!.buildingNumber ?? '';
       _addressController.text = widget.address!.address;
+      _landmarkController.text = widget.address!.landmark ?? '';
       _cityController.text = widget.address!.city;
       _stateController.text = widget.address!.state;
       _pincodeController.text = widget.address!.pincode;
+      _alternatePhoneController.text = widget.address!.alternatePhone ?? '';
       _isDefault = widget.address!.isDefault;
     }
   }
@@ -322,10 +359,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _buildingNumberController.dispose();
     _addressController.dispose();
+    _landmarkController.dispose();
     _cityController.dispose();
     _stateController.dispose();
     _pincodeController.dispose();
+    _alternatePhoneController.dispose();
     super.dispose();
   }
 
@@ -338,10 +378,22 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
       final request = CreateAddressRequest(
         name: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
+        buildingNumber:
+            _buildingNumberController.text.trim().isNotEmpty
+                ? _buildingNumberController.text.trim()
+                : null,
         address: _addressController.text.trim(),
+        landmark:
+            _landmarkController.text.trim().isNotEmpty
+                ? _landmarkController.text.trim()
+                : null,
         city: _cityController.text.trim(),
         state: _stateController.text.trim(),
         pincode: _pincodeController.text.trim(),
+        alternatePhone:
+            _alternatePhoneController.text.trim().isNotEmpty
+                ? _alternatePhoneController.text.trim()
+                : null,
         isDefault: _isDefault,
       );
 
@@ -395,10 +447,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Section: Contact Details
+              _buildSectionHeader('Contact Details'),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Full Name',
+                  labelText: 'Full Name *',
                   prefixIcon: Icon(Icons.person_outline),
                 ),
                 validator: (value) {
@@ -412,7 +467,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
               TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(
-                  labelText: 'Phone Number',
+                  labelText: 'Phone Number *',
                   prefixIcon: Icon(Icons.phone_outlined),
                 ),
                 keyboardType: TextInputType.phone,
@@ -428,10 +483,32 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: _alternatePhoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Alternate Phone Number (Optional)',
+                  prefixIcon: Icon(Icons.phone_android),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+
+              const SizedBox(height: 24),
+              // Section: Address Details
+              _buildSectionHeader('Address Details'),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _buildingNumberController,
+                decoration: const InputDecoration(
+                  labelText: 'Building/Flat/House No. (Optional)',
+                  prefixIcon: Icon(Icons.apartment),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(
-                  labelText: 'Street Address',
-                  prefixIcon: Icon(Icons.home_outlined),
+                  labelText: 'Street Address *',
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                  hintText: 'Street name, Area',
                 ),
                 maxLines: 2,
                 validator: (value) {
@@ -442,12 +519,28 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              TextFormField(
+                controller: _landmarkController,
+                decoration: const InputDecoration(
+                  labelText: 'Landmark (Optional)',
+                  prefixIcon: Icon(Icons.place_outlined),
+                  hintText: 'Near mosque, school, etc.',
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              // Section: Location
+              _buildSectionHeader('Location'),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _cityController,
-                      decoration: const InputDecoration(labelText: 'City'),
+                      decoration: const InputDecoration(
+                        labelText: 'City *',
+                        prefixIcon: Icon(Icons.location_city),
+                      ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Required';
@@ -460,7 +553,10 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _stateController,
-                      decoration: const InputDecoration(labelText: 'State'),
+                      decoration: const InputDecoration(
+                        labelText: 'State *',
+                        prefixIcon: Icon(Icons.map_outlined),
+                      ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Required';
@@ -475,7 +571,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
               TextFormField(
                 controller: _pincodeController,
                 decoration: const InputDecoration(
-                  labelText: 'Pincode',
+                  labelText: 'Pincode *',
                   prefixIcon: Icon(Icons.pin_drop_outlined),
                 ),
                 keyboardType: TextInputType.number,
@@ -500,6 +596,16 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: AppColors.primary,
+        fontWeight: FontWeight.bold,
       ),
     );
   }

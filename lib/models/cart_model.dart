@@ -63,12 +63,17 @@ class CartItemModel extends HiveObject {
 
   /// Get item original total price (before discount)
   double get originalTotalPrice =>
-      productOriginalPrice != null ? productOriginalPrice! * quantity : price != null ? price! * quantity : 0;
+      productOriginalPrice != null
+          ? productOriginalPrice! * quantity
+          : price != null
+          ? price! * quantity
+          : 0;
 
   /// Get savings amount
   double get savings {
     if (productHasDiscount != true || productDiscountPrice == null) return 0;
-    return (productOriginalPrice ?? price ?? 0 - productDiscountPrice!) * quantity;
+    return (productOriginalPrice ?? price ?? 0 - productDiscountPrice!) *
+        quantity;
   }
 
   /// Get product name
@@ -102,21 +107,57 @@ class CartItemModel extends HiveObject {
       return null;
     }
 
+    // Extract product data - handle both nested object and flat fields
+    final product = json['product'] as Map<String, dynamic>?;
+    final quantity = parseInt(json['quantity'], 1);
+
+    // Get product details from nested object or flat fields
+    String? productName;
+    String? productImage;
+    String? productDescription;
+    double? price;
+    double? discountPrice;
+    bool? hasDiscount;
+
+    if (product != null) {
+      // Backend returns nested product object
+      productName = product['name']?.toString();
+      productImage = product['primary_image']?.toString();
+      productDescription = product['description']?.toString();
+      price = parseDouble(product['price']);
+      discountPrice = parseDouble(product['discount_price']);
+      hasDiscount = discountPrice != null && discountPrice > 0;
+    } else {
+      // Cached data has flat fields
+      productName = json['product_name']?.toString();
+      productImage = json['product_image']?.toString();
+      productDescription = json['product_description']?.toString();
+      price = parseDouble(json['price']);
+      discountPrice = parseDouble(json['product_discount_price']);
+      hasDiscount = json['product_has_discount'] as bool?;
+    }
+
+    // Calculate subtotal: use discount price if available, otherwise regular price
+    final effectivePrice = discountPrice ?? price ?? 0;
+    final subtotal =
+        parseDouble(json['subtotal']) ?? (effectivePrice * quantity);
+
     return CartItemModel(
       id: parseInt(json['id']),
       productId: parseInt(json['product_id']),
-      quantity: parseInt(json['quantity'], 1),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      productName: json['product_name']?.toString(),
-      productImage: json['product_image']?.toString(),
-      price: parseDouble(json['price']),
-      subtotal: parseDouble(json['subtotal']),
-      productDescription: json['product_description']?.toString(),
-      productOriginalPrice: parseDouble(json['product_original_price']),
-      productDiscountPrice: parseDouble(json['product_discount_price']),
-      productHasDiscount: json['product_has_discount'] as bool?,
+      quantity: quantity,
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'] as String)
+              : null,
+      productName: productName,
+      productImage: productImage,
+      price: discountPrice ?? price, // Use effective price
+      subtotal: subtotal,
+      productDescription: productDescription,
+      productOriginalPrice: price,
+      productDiscountPrice: discountPrice,
+      productHasDiscount: hasDiscount,
     );
   }
 
@@ -171,19 +212,19 @@ class CartItemModel extends HiveObject {
 
   /// Get props for equality (used by Hive)
   List<Object?> get props => [
-        id,
-        productId,
-        quantity,
-        createdAt,
-        productName,
-        productImage,
-        price,
-        subtotal,
-        productDescription,
-        productOriginalPrice,
-        productDiscountPrice,
-        productHasDiscount,
-      ];
+    id,
+    productId,
+    quantity,
+    createdAt,
+    productName,
+    productImage,
+    price,
+    subtotal,
+    productDescription,
+    productOriginalPrice,
+    productDiscountPrice,
+    productHasDiscount,
+  ];
 }
 
 /// Cart model representing the entire cart (Hive-compatible)
@@ -245,15 +286,13 @@ class CartModel extends HiveObject {
     List<CartItemModel> items = [];
 
     if (itemsList != null && itemsList is List) {
-      items = itemsList
-          .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      items =
+          itemsList
+              .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
+              .toList();
     }
 
-    return CartModel(
-      items: items,
-      lastUpdated: DateTime.now(),
-    );
+    return CartModel(items: items, lastUpdated: DateTime.now());
   }
 
   /// Convert CartModel to JSON

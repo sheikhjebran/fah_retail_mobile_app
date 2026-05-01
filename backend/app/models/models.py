@@ -138,10 +138,13 @@ class Address(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String(100), nullable=False)
     phone = Column(String(15), nullable=False)
+    building_number = Column(String(100), nullable=True)
     address = Column(Text, nullable=False)
+    landmark = Column(String(200), nullable=True)
     city = Column(String(50), nullable=False)
     state = Column(String(50), nullable=False)
     pincode = Column(String(10), nullable=False)
+    alternate_phone = Column(String(15), nullable=True)
     is_default = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow,

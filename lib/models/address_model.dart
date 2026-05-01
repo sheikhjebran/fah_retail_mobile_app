@@ -6,10 +6,13 @@ class AddressModel extends Equatable {
   final int userId;
   final String name;
   final String phone;
+  final String? buildingNumber;
   final String address;
+  final String? landmark;
   final String city;
   final String state;
   final String pincode;
+  final String? alternatePhone;
   final bool isDefault;
 
   const AddressModel({
@@ -17,16 +20,29 @@ class AddressModel extends Equatable {
     required this.userId,
     required this.name,
     required this.phone,
+    this.buildingNumber,
     required this.address,
+    this.landmark,
     required this.city,
     required this.state,
     required this.pincode,
+    this.alternatePhone,
     this.isDefault = false,
   });
 
-  /// Get formatted address
+  /// Get formatted address for display
   String get formattedAddress {
-    return '$address, $city, $state - $pincode';
+    final parts = <String>[];
+    if (buildingNumber != null && buildingNumber!.isNotEmpty) {
+      parts.add(buildingNumber!);
+    }
+    parts.add(address);
+    if (landmark != null && landmark!.isNotEmpty) {
+      parts.add(landmark!);
+    }
+    parts.add(city);
+    parts.add('$state - $pincode');
+    return parts.join(', ');
   }
 
   /// Get short address
@@ -50,10 +66,13 @@ class AddressModel extends Equatable {
       userId: json['user_id'] as int,
       name: json['name'] as String,
       phone: json['phone'] as String,
+      buildingNumber: json['building_number'] as String?,
       address: json['address'] as String,
+      landmark: json['landmark'] as String?,
       city: json['city'] as String,
       state: json['state'] as String,
       pincode: json['pincode'] as String,
+      alternatePhone: json['alternate_phone'] as String?,
       isDefault: json['is_default'] as bool? ?? false,
     );
   }
@@ -65,10 +84,13 @@ class AddressModel extends Equatable {
       'user_id': userId,
       'name': name,
       'phone': phone,
+      'building_number': buildingNumber,
       'address': address,
+      'landmark': landmark,
       'city': city,
       'state': state,
       'pincode': pincode,
+      'alternate_phone': alternatePhone,
       'is_default': isDefault,
     };
   }
@@ -79,10 +101,13 @@ class AddressModel extends Equatable {
     int? userId,
     String? name,
     String? phone,
+    String? buildingNumber,
     String? address,
+    String? landmark,
     String? city,
     String? state,
     String? pincode,
+    String? alternatePhone,
     bool? isDefault,
   }) {
     return AddressModel(
@@ -90,10 +115,13 @@ class AddressModel extends Equatable {
       userId: userId ?? this.userId,
       name: name ?? this.name,
       phone: phone ?? this.phone,
+      buildingNumber: buildingNumber ?? this.buildingNumber,
       address: address ?? this.address,
+      landmark: landmark ?? this.landmark,
       city: city ?? this.city,
       state: state ?? this.state,
       pincode: pincode ?? this.pincode,
+      alternatePhone: alternatePhone ?? this.alternatePhone,
       isDefault: isDefault ?? this.isDefault,
     );
   }
@@ -104,10 +132,13 @@ class AddressModel extends Equatable {
     userId,
     name,
     phone,
+    buildingNumber,
     address,
+    landmark,
     city,
     state,
     pincode,
+    alternatePhone,
     isDefault,
   ];
 }
@@ -116,19 +147,25 @@ class AddressModel extends Equatable {
 class CreateAddressRequest {
   final String name;
   final String phone;
+  final String? buildingNumber;
   final String address;
+  final String? landmark;
   final String city;
   final String state;
   final String pincode;
+  final String? alternatePhone;
   final bool isDefault;
 
   const CreateAddressRequest({
     required this.name,
     required this.phone,
+    this.buildingNumber,
     required this.address,
+    this.landmark,
     required this.city,
     required this.state,
     required this.pincode,
+    this.alternatePhone,
     this.isDefault = false,
   });
 
@@ -136,10 +173,13 @@ class CreateAddressRequest {
     return {
       'name': name,
       'phone': phone,
+      'building_number': buildingNumber,
       'address': address,
+      'landmark': landmark,
       'city': city,
       'state': state,
       'pincode': pincode,
+      'alternate_phone': alternatePhone,
       'is_default': isDefault,
     };
   }

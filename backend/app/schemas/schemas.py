@@ -206,10 +206,13 @@ class ProductListResponse(BaseModel):
 class AddressBase(BaseModel):
     name: str
     phone: str
+    building_number: Optional[str] = None
     address: str
+    landmark: Optional[str] = None
     city: str
     state: str
     pincode: str
+    alternate_phone: Optional[str] = None
     is_default: bool = False
 
 
@@ -220,10 +223,13 @@ class AddressCreate(AddressBase):
 class AddressUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
+    building_number: Optional[str] = None
     address: Optional[str] = None
+    landmark: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
     pincode: Optional[str] = None
+    alternate_phone: Optional[str] = None
     is_default: Optional[bool] = None
 
 

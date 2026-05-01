@@ -9,6 +9,7 @@ import '../../models/order_model.dart';
 import '../../presenters/order_presenter.dart';
 import '../../services/address_service.dart';
 import '../../services/payment_service.dart';
+import '../profile/manage_addresses_screen.dart';
 import 'order_confirmation_screen.dart';
 
 /// Checkout screen with address selection and payment
@@ -169,9 +170,15 @@ class _CheckoutScreenState extends State<CheckoutScreen>
               _orderPresenter.selectAddress(address);
               Navigator.pop(context);
             },
-            onAddNew: () {
+            onAddNew: () async {
               Navigator.pop(context);
-              // TODO: Navigate to add address screen
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const AddEditAddressScreen()),
+              );
+              if (result == true) {
+                _loadAddresses();
+              }
             },
           ),
     );

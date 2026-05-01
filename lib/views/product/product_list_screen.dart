@@ -300,6 +300,7 @@ class _ProductListScreenState extends State<ProductListScreen>
                             product: product,
                             onTap: () => _navigateToDetail(product),
                             onAddToCart: () => _addToCart(product),
+                            isAddingToCart: _addingToCart.contains(product.id),
                           );
                         },
                       ),
