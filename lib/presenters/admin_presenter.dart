@@ -53,6 +53,28 @@ abstract class AdminOrderDetailView {
   void showError(String message);
 }
 
+/// View contract for admin banner list
+abstract class AdminBannerListView {
+  void showLoading();
+  void hideLoading();
+  void showBanners(List<BannerModel> banners);
+  void showError(String message);
+  void showEmptyState();
+  void showBannerDeleted(int bannerId);
+}
+
+/// View contract for admin banner form
+abstract class AdminBannerFormView {
+  void showLoading();
+  void hideLoading();
+  void showBanner(BannerModel banner);
+  void showBannerSaved(BannerModel banner);
+  void showImageUploading();
+  void showImageUploaded(String imageUrl);
+  void showError(String message);
+  void showValidationError(String field, String message);
+}
+
 /// Admin presenter for managing admin operations
 class AdminPresenter {
   final AdminService _adminService;
@@ -62,10 +84,13 @@ class AdminPresenter {
   AdminProductFormView? _productFormView;
   AdminOrderListView? _orderListView;
   AdminOrderDetailView? _orderDetailView;
+  AdminBannerListView? _bannerListView;
+  AdminBannerFormView? _bannerFormView;
 
   DashboardStatsModel? _stats;
   List<ProductModel> _products = [];
   List<OrderModel> _orders = [];
+  List<BannerModel> _banners = [];
 
   int _productPage = 1;
   int _orderPage = 1;
@@ -101,6 +126,16 @@ class AdminPresenter {
     _orderDetailView = view;
   }
 
+  /// Attach banner list view
+  void attachBannerListView(AdminBannerListView view) {
+    _bannerListView = view;
+  }
+
+  /// Attach banner form view
+  void attachBannerFormView(AdminBannerFormView view) {
+    _bannerFormView = view;
+  }
+
   /// Detach views
   void detach() {
     _dashboardView = null;
@@ -108,6 +143,8 @@ class AdminPresenter {
     _productFormView = null;
     _orderListView = null;
     _orderDetailView = null;
+    _bannerListView = null;
+    _bannerFormView = null;
   }
 
   // ==================== Dashboard ====================
@@ -484,6 +521,135 @@ class AdminPresenter {
       await loadOrders(refresh: true);
     } catch (e) {
       _orderListView?.showError(e.toString());
+    }
+  }
+
+  // ==================== Banner Management ====================
+
+  /// Load banners
+  Future<void> loadBanners({bool includeInactive = true}) async {
+    _bannerListView?.showLoading();
+    try {
+      _banners = await _adminService.getBanners(
+        includeInactive: includeInactive,
+      );
+      if (_banners.isEmpty) {
+        _bannerListView?.showEmptyState();
+      } else {
+        _bannerListView?.showBanners(_banners);
+      }
+    } catch (e) {
+      _bannerListView?.showError(e.toString());
+    } finally {
+      _bannerListView?.hideLoading();
+    }
+  }
+
+  /// Load banner by ID
+  Future<void> loadBanner(int id) async {
+    _bannerFormView?.showLoading();
+    try {
+      final banner = await _adminService.getBanner(id);
+      _bannerFormView?.showBanner(banner);
+    } catch (e) {
+      _bannerFormView?.showError(e.toString());
+    } finally {
+      _bannerFormView?.hideLoading();
+    }
+  }
+
+  /// Create banner
+  Future<void> createBanner({
+    required String imageUrl,
+    String? title,
+    String? description,
+    String? link,
+    String? discountText,
+    int? discountPercent,
+    String? buttonText,
+    int sortOrder = 0,
+    bool isActive = true,
+  }) async {
+    _bannerFormView?.showLoading();
+    try {
+      final banner = await _adminService.createBanner(
+        imageUrl: imageUrl,
+        title: title,
+        description: description,
+        link: link,
+        discountText: discountText,
+        discountPercent: discountPercent,
+        buttonText: buttonText,
+        sortOrder: sortOrder,
+        isActive: isActive,
+      );
+      _bannerFormView?.showBannerSaved(banner);
+    } catch (e) {
+      _bannerFormView?.showError(e.toString());
+    } finally {
+      _bannerFormView?.hideLoading();
+    }
+  }
+
+  /// Update banner
+  Future<void> updateBanner(
+    int id, {
+    String? imageUrl,
+    String? title,
+    String? description,
+    String? link,
+    String? discountText,
+    int? discountPercent,
+    String? buttonText,
+    int? sortOrder,
+    bool? isActive,
+  }) async {
+    _bannerFormView?.showLoading();
+    try {
+      final banner = await _adminService.updateBanner(
+        id,
+        imageUrl: imageUrl,
+        title: title,
+        description: description,
+        link: link,
+        discountText: discountText,
+        discountPercent: discountPercent,
+        buttonText: buttonText,
+        sortOrder: sortOrder,
+        isActive: isActive,
+      );
+      _bannerFormView?.showBannerSaved(banner);
+    } catch (e) {
+      _bannerFormView?.showError(e.toString());
+    } finally {
+      _bannerFormView?.hideLoading();
+    }
+  }
+
+  /// Delete banner
+  Future<void> deleteBanner(int id) async {
+    _bannerListView?.showLoading();
+    try {
+      await _adminService.deleteBanner(id);
+      _bannerListView?.showBannerDeleted(id);
+    } catch (e) {
+      _bannerListView?.showError(e.toString());
+    } finally {
+      _bannerListView?.hideLoading();
+    }
+  }
+
+  /// Upload banner image
+  Future<void> uploadBannerImage(String filePath, {int? bannerId}) async {
+    _bannerFormView?.showImageUploading();
+    try {
+      final imageUrl = await _adminService.uploadBannerImage(
+        filePath,
+        bannerId: bannerId,
+      );
+      _bannerFormView?.showImageUploaded(imageUrl);
+    } catch (e) {
+      _bannerFormView?.showError(e.toString());
     }
   }
 }
