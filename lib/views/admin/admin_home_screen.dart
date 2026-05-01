@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/common_models.dart';
 import '../../presenters/admin_presenter.dart';
+import 'admin_banner_list_screen.dart';
 
 /// Admin home content with stats and charts
 class AdminHomeScreen extends StatefulWidget {
@@ -85,6 +86,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
                       _buildQuickStats(),
                       const SizedBox(height: 24),
 
+                      // Quick actions
+                      _buildSectionHeader('Quick Actions'),
+                      const SizedBox(height: 12),
+                      _buildQuickActions(),
+                      const SizedBox(height: 24),
+
                       // Revenue chart
                       _buildSectionHeader('Revenue Overview'),
                       const SizedBox(height: 12),
@@ -150,6 +157,44 @@ class _AdminHomeScreenState extends State<AdminHomeScreen>
           value: '${_stats?.totalCustomers ?? 0}',
           icon: Icons.people,
           color: AppColors.warning,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickActionCard(
+            title: 'Manage Banners',
+            subtitle: 'Edit home screen banners',
+            icon: Icons.image_outlined,
+            color: AppColors.secondary,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AdminBannerListScreen(),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _QuickActionCard(
+            title: 'View Reports',
+            subtitle: 'Sales & analytics',
+            icon: Icons.analytics_outlined,
+            color: AppColors.info,
+            onTap: () {
+              // TODO: Navigate to reports
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Reports coming soon')),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -467,6 +512,64 @@ class _StatCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Quick action card widget
+class _QuickActionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
