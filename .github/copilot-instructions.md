@@ -62,15 +62,16 @@ abstract class ProductListView {
 
 ```
 lib/
-  core/network/     # API client, interceptors
-  core/utils/       # Helpers, validators
-  core/constants/   # App constants, endpoints
-  core/theme/       # Colors, typography
-  models/           # Data models
-  services/         # API services
-  presenters/       # Business logic
-  views/            # Screens organized by feature
-  widgets/          # Reusable components
+  core/
+    network/        # api_client.dart, api_exceptions.dart
+    utils/          # Helpers, validators
+    constants/      # api_endpoints.dart, app_constants.dart
+    theme/          # Colors, typography
+  models/           # Data models (includes common_models.dart)
+  services/         # API services (auth, product, cart, order, address, admin, banner, payment)
+  presenters/       # Business logic (auth, product, cart, order, admin)
+  views/            # Screens organized by feature (splash, auth, dashboard, product, cart, order, profile, admin)
+  widgets/          # Reusable components (banner_slider, cart_item, category_filter, etc.)
 ```
 
 ## API Conventions
@@ -118,16 +119,22 @@ Earrings subcategories: Crystal, Long, Short, Round, Rose gold, Silver plated, G
 - fl_chart: Admin dashboard charts
 - image_picker: Product image upload
 - pin_code_fields: OTP input
+- equatable: Value equality
+- share_plus: Share functionality
+- provider: Dependency injection
+- shimmer: Loading placeholders
+- flutter_svg: SVG support
+- intl: Internationalization
 
 ### Backend
 
 - fastapi: Web framework
 - sqlalchemy: ORM
-- pydantic: Validation
+- pydantic/pydantic-settings: Validation
 - python-jose: JWT handling
 - cloudinary: Image storage
 - razorpay: Payment processing
-- alembic: Database migrations
+- httpx: HTTP client
 
 ## Testing Guidelines
 

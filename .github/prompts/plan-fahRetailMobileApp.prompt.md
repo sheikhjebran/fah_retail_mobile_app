@@ -113,7 +113,7 @@ Build a complete Flutter mobile app for an accessories store with User and Admin
 
 | Step | Task                                                                           |
 | ---- | ------------------------------------------------------------------------------ |
-| 11.1 | Project structure with SQLAlchemy, Pydantic, Alembic                           |
+| 11.1 | Project structure with SQLAlchemy, Pydantic                                    |
 | 11.2 | Auth routes: `/api/send-otp`, `/api/verify-otp`, `/api/signup`, `/api/login`   |
 | 11.3 | Product routes: `/api/products`, `/api/products/trending`, `/api/product/{id}` |
 | 11.4 | Cart routes: `/api/cart/add`, `/api/cart/update`, `/api/cart`                  |
@@ -129,15 +129,14 @@ lib/
   core/
     network/
       api_client.dart
-      api_endpoints.dart
-      interceptors.dart
+      api_exceptions.dart
     utils/
       validators.dart
       formatters.dart
       helpers.dart
     constants/
+      api_endpoints.dart
       app_constants.dart
-      colors.dart
     theme/
       app_theme.dart
       typography.dart
@@ -146,26 +145,25 @@ lib/
     product_model.dart
     order_model.dart
     cart_model.dart
+    cart_model.g.dart
     category_model.dart
     address_model.dart
-    order_item_model.dart
-    order_status_history_model.dart
+    common_models.dart
   services/
-    api_service.dart
     auth_service.dart
     product_service.dart
     cart_service.dart
     order_service.dart
     payment_service.dart
+    address_service.dart
+    admin_service.dart
+    banner_service.dart
   presenters/
-    login_presenter.dart
+    auth_presenter.dart
     product_presenter.dart
     cart_presenter.dart
     order_presenter.dart
-    admin/
-      admin_product_presenter.dart
-      admin_order_presenter.dart
-      admin_dashboard_presenter.dart
+    admin_presenter.dart
   views/
     splash/
       splash_screen.dart
@@ -185,21 +183,22 @@ lib/
       order_list_screen.dart
       order_detail_screen.dart
       order_confirmation_screen.dart
-    checkout/
-      address_selection_screen.dart
-      add_address_screen.dart
-      payment_screen.dart
     profile/
       profile_screen.dart
       edit_profile_screen.dart
     admin/
       admin_dashboard_screen.dart
-      product/
-        admin_product_list_screen.dart
-        add_edit_product_screen.dart
-      order/
-        admin_order_list_screen.dart
-        admin_order_detail_screen.dart
+      admin_home_screen.dart
+      admin_product_list_screen.dart
+      admin_product_form_screen.dart
+      admin_order_list_screen.dart
+      admin_order_detail_screen.dart
+      admin_profile_screen.dart
+      admin_edit_profile_screen.dart
+      admin_notifications_screen.dart
+      admin_security_screen.dart
+      admin_help_center_screen.dart
+      admin_about_screen.dart
   widgets/
     product_card.dart
     banner_slider.dart
@@ -218,40 +217,36 @@ lib/
 ```
 backend/
   app/
+    __init__.py
     main.py
     config.py
     database.py
-    dependencies.py
+    seed_categories.py
     models/
-      user.py
-      product.py
-      order.py
-      cart.py
-      category.py
-      address.py
+      __init__.py
+      models.py          # All SQLAlchemy models in single file
     schemas/
-      user.py
-      product.py
-      order.py
-      cart.py
-      auth.py
-    routers/
+      __init__.py
+      schemas.py         # All Pydantic schemas in single file
+    routes/
+      __init__.py
       auth.py
       products.py
       cart.py
       orders.py
       admin.py
-    services/
-      otp_service.py
-      cloudinary_service.py
-      razorpay_service.py
+      addresses.py
+      banners.py
+      categories.py
+      payments.py
+      users.py
     utils/
-      security.py
-      validators.py
+      __init__.py
+      auth.py            # JWT & security utilities
+      cloudinary.py      # Image upload utilities
   requirements.txt
-  alembic/
-    versions/
-  alembic.ini
+  schema.sql
+  README.md
   .env
 ```
 
@@ -460,46 +455,63 @@ backend/
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.8
   dio: ^5.4.0
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.4
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   razorpay_flutter: ^1.3.6
-  lottie: ^3.1.0
+  lottie: ^3.3.2
   cached_network_image: ^3.3.1
-  carousel_slider: ^4.2.1
-  fl_chart: ^0.66.2
+  carousel_slider: ^5.0.0
+  fl_chart: ^1.2.0
   image_picker: ^1.0.7
-  intl: ^0.19.0
+  intl: ^0.20.2
   shimmer: ^3.0.0
-  flutter_svg: ^2.0.9
-  pin_code_fields: ^8.0.1
+  flutter_svg: ^2.2.4
+  pin_code_fields: ^9.1.0
+  equatable: ^2.0.5
+  share_plus: ^12.0.1
+  provider: ^6.1.1
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
+  launcher_name: ^1.0.2
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1
+  flutter_lints: ^6.0.0
   mockito: ^5.4.4
-  build_runner: ^2.4.8
+  build_runner: ^2.4.13
   hive_generator: ^2.0.1
 ```
 
 ### Backend (requirements.txt)
 
 ```
-fastapi==0.109.0
-uvicorn==0.27.0
-sqlalchemy==2.0.25
-pymysql==1.1.0
-pydantic==2.5.3
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
-cloudinary==1.38.0
-razorpay==1.4.1
-alembic==1.13.1
-python-dotenv==1.0.0
-httpx==0.26.0
+# FastAPI
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Database
+sqlalchemy>=2.0.25
+pymysql>=1.1.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+pydantic[email]>=2.5.3
+pydantic-settings>=2.1.0
+
+# Cloudinary
+cloudinary>=1.38.0
+
+# Razorpay
+razorpay>=1.4.1
+
+# Utils
+python-dotenv>=1.0.0
+httpx>=0.26.0
 ```
 
 ---

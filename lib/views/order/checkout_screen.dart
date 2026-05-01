@@ -6,7 +6,6 @@ import '../../core/utils/helpers.dart';
 import '../../models/cart_model.dart';
 import '../../models/address_model.dart';
 import '../../models/order_model.dart';
-import '../../models/user_model.dart';
 import '../../presenters/order_presenter.dart';
 import '../../services/address_service.dart';
 import '../../services/payment_service.dart';

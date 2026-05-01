@@ -79,16 +79,18 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
   @override
   void showError(String message) {
     setState(() => _isUpdating = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_order != null ? 'Order #${_order!.orderNumber}' : 'Order Details'),
+        title: Text(
+          _order != null ? 'Order #${_order!.orderNumber}' : 'Order Details',
+        ),
       ),
       body:
           _isLoading
@@ -132,7 +134,9 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
                 ),
               ),
       bottomNavigationBar:
-          _order != null && _order!.status != 'delivered' && _order!.status != 'cancelled'
+          _order != null &&
+                  _order!.status != 'delivered' &&
+                  _order!.status != 'cancelled'
               ? _buildBottomBar()
               : null,
     );
@@ -182,9 +186,10 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: _order!.isPaid
-                  ? AppColors.success.withValues(alpha: 0.1)
-                  : AppColors.warning.withValues(alpha: 0.1),
+              color:
+                  _order!.isPaid
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -218,7 +223,11 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.person_outline, size: 18, color: AppColors.textSecondary),
+              const Icon(
+                Icons.person_outline,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 8),
               Text(_order!.address?.fullName ?? 'N/A'),
             ],
@@ -226,7 +235,11 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.phone_outlined, size: 18, color: AppColors.textSecondary),
+              const Icon(
+                Icons.phone_outlined,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 8),
               Text(_order!.address?.phone ?? 'N/A'),
             ],
@@ -234,7 +247,11 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.email_outlined, size: 18, color: AppColors.textSecondary),
+              const Icon(
+                Icons.email_outlined,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 8),
               const Text('Email not available'),
             ],
@@ -289,67 +306,74 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
             children: [
               Text(
                 'Items (${_order!.items?.length ?? 0})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          ...(_order!.items ?? []).map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: item.productImage != null
-                          ? ClipRRect(
+          ...(_order!.items ?? []).map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child:
+                        item.productImage != null
+                            ? ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
                                 item.productImage!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.image,
-                                  color: AppColors.textSecondary,
-                                ),
+                                errorBuilder:
+                                    (_, _, _) => const Icon(
+                                      Icons.image,
+                                      color: AppColors.textSecondary,
+                                    ),
                               ),
                             )
-                          : const Icon(
+                            : const Icon(
                               Icons.image,
                               color: AppColors.textSecondary,
                             ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.productName,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.productName,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${item.quantity} x ${Formatters.formatPriceInt(item.price)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
                           ),
-                          Text(
-                            '${item.quantity} x ${Formatters.formatPriceInt(item.price)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      Formatters.formatPriceInt(item.subtotal),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                  Text(
+                    Formatters.formatPriceInt(item.subtotal),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -399,7 +423,12 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
     );
   }
 
-  Widget _buildPriceRow(String label, double amount, {bool isBold = false, String? label: null}) {
+  Widget _buildPriceRow(
+    String label,
+    double amount, {
+    bool isBold = false,
+    String? label,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -436,13 +465,14 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen>
       child: SafeArea(
         child: ElevatedButton(
           onPressed: _isUpdating ? null : _updateOrderStatus,
-          child: _isUpdating
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Update Status'),
+          child:
+              _isUpdating
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                  : const Text('Update Status'),
         ),
       ),
     );
@@ -533,24 +563,25 @@ class _StatusUpdateDialogState extends State<_StatusUpdateDialog> {
       title: const Text('Update Order Status'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: _statuses.map((status) {
-          return ListTile(
-            title: Text(_getStatusLabel(status)),
-            leading: Radio<String>(
-              value: status,
-              groupValue: _selectedStatus,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _selectedStatus = value);
-                }
-              },
-              activeColor: AppColors.primary,
-            ),
-            onTap: () {
-              setState(() => _selectedStatus = status);
-            },
-          );
-        }).toList(),
+        children:
+            _statuses.map((status) {
+              return ListTile(
+                title: Text(_getStatusLabel(status)),
+                leading: Radio<String>(
+                  value: status,
+                  groupValue: _selectedStatus,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedStatus = value);
+                    }
+                  },
+                  activeColor: AppColors.primary,
+                ),
+                onTap: () {
+                  setState(() => _selectedStatus = status);
+                },
+              );
+            }).toList(),
       ),
       actions: [
         TextButton(
