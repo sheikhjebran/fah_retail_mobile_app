@@ -25,19 +25,22 @@ class Formatters {
     ).format(price);
   }
 
-  /// Format date
+  /// Format date (converts UTC to local)
   static String formatDate(DateTime date) {
-    return DateFormat('dd MMM yyyy').format(date);
+    final localDate = date.isUtc ? date.toLocal() : date;
+    return DateFormat('dd MMM yyyy').format(localDate);
   }
 
-  /// Format date with time
+  /// Format date with time (converts UTC to local)
   static String formatDateTime(DateTime date) {
-    return DateFormat('dd MMM yyyy, hh:mm a').format(date);
+    final localDate = date.isUtc ? date.toLocal() : date;
+    return DateFormat('dd MMM yyyy, hh:mm a').format(localDate);
   }
 
-  /// Format time
+  /// Format time (converts UTC to local)
   static String formatTime(DateTime date) {
-    return DateFormat('hh:mm a').format(date);
+    final localDate = date.isUtc ? date.toLocal() : date;
+    return DateFormat('hh:mm a').format(localDate);
   }
 
   /// Format date for API (ISO 8601)
@@ -45,11 +48,25 @@ class Formatters {
     return date.toIso8601String();
   }
 
-  /// Parse date from API
+  /// Parse date from API (treats as UTC since backend uses utcnow)
   static DateTime? parseDateFromApi(String? dateString) {
     if (dateString == null || dateString.isEmpty) return null;
     try {
-      return DateTime.parse(dateString);
+      final parsed = DateTime.parse(dateString);
+      // If no timezone info, treat as UTC (backend uses datetime.utcnow())
+      if (!dateString.contains('Z') && !dateString.contains('+')) {
+        return DateTime.utc(
+          parsed.year,
+          parsed.month,
+          parsed.day,
+          parsed.hour,
+          parsed.minute,
+          parsed.second,
+          parsed.millisecond,
+          parsed.microsecond,
+        );
+      }
+      return parsed;
     } catch (e) {
       return null;
     }

@@ -2,12 +2,38 @@ import 'package:equatable/equatable.dart';
 import 'address_model.dart';
 import 'product_model.dart';
 
+/// Parse datetime from API (treats as UTC since backend uses utcnow)
+DateTime? _parseDateTime(String? dateString) {
+  if (dateString == null || dateString.isEmpty) return null;
+  try {
+    final parsed = DateTime.parse(dateString);
+    // If no timezone info, treat as UTC (backend uses datetime.utcnow())
+    if (!dateString.contains('Z') && !dateString.contains('+')) {
+      return DateTime.utc(
+        parsed.year,
+        parsed.month,
+        parsed.day,
+        parsed.hour,
+        parsed.minute,
+        parsed.second,
+        parsed.millisecond,
+        parsed.microsecond,
+      );
+    }
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
 /// Order model for FAH Retail App
 class OrderModel extends Equatable {
   final int id;
   final int userId;
   final String orderNumber;
   final double totalAmount;
+  final double discountAmount;
+  final double deliveryFeeAmount;
   final String paymentMethod;
   final String paymentStatus;
   final String status;
@@ -21,6 +47,8 @@ class OrderModel extends Equatable {
     required this.userId,
     required this.orderNumber,
     required this.totalAmount,
+    this.discountAmount = 0,
+    this.deliveryFeeAmount = 0,
     required this.paymentMethod,
     required this.paymentStatus,
     required this.status,
@@ -54,14 +82,20 @@ class OrderModel extends Equatable {
   /// Get address (convenience getter for deliveryAddress)
   AddressModel? get address => deliveryAddress;
 
-  /// Get subtotal (convenience getter - same as totalAmount for now)
-  double get subtotal => totalAmount;
+  /// Get subtotal (calculated from items or total - delivery + discount)
+  double get subtotal {
+    if (items != null && items!.isNotEmpty) {
+      return items!.fold(0.0, (sum, item) => sum + item.total);
+    }
+    // Fallback: calculate from total
+    return totalAmount - deliveryFeeAmount + discountAmount;
+  }
 
-  /// Get delivery fee (default 0, can be extended)
-  double get deliveryFee => 0;
+  /// Get delivery fee
+  double get deliveryFee => deliveryFeeAmount;
 
-  /// Get discount amount (default 0, can be extended)
-  double get discount => 0;
+  /// Get discount amount
+  double get discount => discountAmount;
 
   /// Get estimated delivery date
   DateTime? get estimatedDelivery {
@@ -76,6 +110,14 @@ class OrderModel extends Equatable {
       userId: json['user_id'] as int,
       orderNumber: json['order_number'] as String,
       totalAmount: (json['total_amount'] as num).toDouble(),
+      discountAmount:
+          json['discount_amount'] != null
+              ? (json['discount_amount'] as num).toDouble()
+              : 0,
+      deliveryFeeAmount:
+          json['delivery_fee'] != null
+              ? (json['delivery_fee'] as num).toDouble()
+              : 0,
       paymentMethod: json['payment_method'] as String,
       paymentStatus: json['payment_status'] as String,
       status: json['status'] as String,
@@ -103,10 +145,7 @@ class OrderModel extends Equatable {
                   )
                   .toList()
               : null,
-      createdAt:
-          json['created_at'] != null
-              ? DateTime.parse(json['created_at'] as String)
-              : null,
+      createdAt: _parseDateTime(json['created_at'] as String?),
     );
   }
 
@@ -117,6 +156,8 @@ class OrderModel extends Equatable {
       'user_id': userId,
       'order_number': orderNumber,
       'total_amount': totalAmount,
+      'discount_amount': discountAmount,
+      'delivery_fee': deliveryFeeAmount,
       'payment_method': paymentMethod,
       'payment_status': paymentStatus,
       'status': status,
@@ -133,6 +174,8 @@ class OrderModel extends Equatable {
     int? userId,
     String? orderNumber,
     double? totalAmount,
+    double? discountAmount,
+    double? deliveryFeeAmount,
     String? paymentMethod,
     String? paymentStatus,
     String? status,
@@ -146,6 +189,8 @@ class OrderModel extends Equatable {
       userId: userId ?? this.userId,
       orderNumber: orderNumber ?? this.orderNumber,
       totalAmount: totalAmount ?? this.totalAmount,
+      discountAmount: discountAmount ?? this.discountAmount,
+      deliveryFeeAmount: deliveryFeeAmount ?? this.deliveryFeeAmount,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       status: status ?? this.status,
@@ -162,6 +207,8 @@ class OrderModel extends Equatable {
     userId,
     orderNumber,
     totalAmount,
+    discountAmount,
+    deliveryFeeAmount,
     paymentMethod,
     paymentStatus,
     status,
@@ -301,7 +348,7 @@ class OrderStatusHistoryModel extends Equatable {
       orderId: json['order_id'] as int,
       status: json['status'] as String,
       note: json['note'] as String?,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: _parseDateTime(json['timestamp'] as String?) ?? DateTime.now(),
     );
   }
 

@@ -37,6 +37,7 @@ def order_to_response(order: Order) -> dict:
         "status": order.status.value,
         "delivery_address": {
             "id": order.address.id,
+            "user_id": order.address.user_id,
             "name": order.address.name,
             "phone": order.address.phone,
             "building_number": order.address.building_number,
@@ -54,8 +55,19 @@ def order_to_response(order: Order) -> dict:
                 "order_id": item.order_id,
                 "product_id": item.product_id,
                 "product": {
+                    "id": item.product_id,
                     "name": item.product_name,
+                    "description": "",
+                    "category_id": 0,
+                    "price": float(item.price),
+                    "discount_price": float(item.discount_price) if item.discount_price else None,
+                    "qty": 0,
                     "primary_image": item.product_image,
+                    "is_trending": False,
+                    "is_active": True,
+                    "images": [],
+                    "category": None,
+                    "created_at": None,
                 },
                 "qty": item.qty,
                 "price": float(item.price),
@@ -69,9 +81,9 @@ def order_to_response(order: Order) -> dict:
                 "order_id": history.order_id,
                 "status": history.status.value if hasattr(history.status, 'value') else history.status,
                 "note": history.note,
-                "timestamp": history.timestamp.isoformat() if history.timestamp else None,
+                "timestamp": (history.timestamp or datetime.utcnow()).isoformat(),
             }
-            for history in sorted(order.status_history, key=lambda x: x.timestamp, reverse=True)
+            for history in sorted(order.status_history, key=lambda x: x.timestamp or datetime.min, reverse=True)
         ],
         "created_at": order.created_at.isoformat() if order.created_at else None,
     }
@@ -186,8 +198,8 @@ async def place_order(
         # Update stock
         product.qty -= cart_item.quantity
 
-    # Calculate delivery fee
-    delivery_fee = 0 if subtotal >= 49900 else 4900  # Free delivery over ₹499
+    # Calculate delivery fee (in rupees - free delivery over ₹499)
+    delivery_fee = 0 if subtotal >= 499 else 49
     total_amount = subtotal + delivery_fee
 
     # Determine payment status based on payment method
