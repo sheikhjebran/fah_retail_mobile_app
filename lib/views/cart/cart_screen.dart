@@ -35,7 +35,8 @@ class _CartScreenState extends State<CartScreen> implements CartView {
   }
 
   Future<void> _loadCart() async {
-    await _presenter.loadCart();
+    // Force refresh from backend to ensure cart is in sync
+    await _presenter.loadCart(forceRefresh: true);
   }
 
   void _updateQuantity(CartItemModel item, int newQuantity) async {

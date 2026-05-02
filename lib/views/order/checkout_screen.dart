@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/utils/helpers.dart';
 import '../../models/cart_model.dart';
 import '../../models/address_model.dart';
 import '../../models/order_model.dart';
 import '../../presenters/order_presenter.dart';
 import '../../services/address_service.dart';
-import '../../services/payment_service.dart';
+import '../../services/order_service.dart';
+import '../../services/payment_service.dart' show PaymentMethod;
 import '../profile/manage_addresses_screen.dart';
 import 'order_confirmation_screen.dart';
 
@@ -26,7 +27,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     implements CheckoutView {
   final _orderPresenter = OrderPresenter();
   final _addressService = AddressService();
-  final _paymentService = PaymentService();
+  final _orderService = OrderService();
 
   List<AddressModel> _addresses = [];
   AddressModel? _selectedAddress;
@@ -42,16 +43,14 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   void initState() {
     super.initState();
     _orderPresenter.attachCheckoutView(this);
-    // Set default payment method
-    _orderPresenter.selectPaymentMethod('upi');
+    // Set default payment method as COD
+    _orderPresenter.selectPaymentMethod(AppConstants.paymentCOD);
     _loadAddresses();
-    _initPayment();
   }
 
   @override
   void dispose() {
     _orderPresenter.detach();
-    _paymentService.dispose();
     super.dispose();
   }
 
@@ -74,32 +73,6 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     }
   }
 
-  void _initPayment() {
-    _paymentService.initRazorpay(
-      onSuccess: _onPaymentSuccess,
-      onFailure: _onPaymentFailure,
-      onExternalWallet: _onPaymentWallet,
-    );
-  }
-
-  void _onPaymentSuccess(PaymentSuccessResponse response) {
-    // Verify payment and complete order
-    _completeOrder(response.paymentId ?? '');
-  }
-
-  void _onPaymentFailure(PaymentFailureResponse response) {
-    setState(() => _isPlacingOrder = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Payment failed: ${response.message ?? "Unknown error"}'),
-      ),
-    );
-  }
-
-  void _onPaymentWallet(ExternalWalletResponse response) {
-    // Handle wallet response
-  }
-
   Future<void> _placeOrder() async {
     if (_selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -111,50 +84,79 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     setState(() => _isPlacingOrder = true);
 
     try {
-      // Get user data for payment
-      final user = await Helpers.getUserData();
-      final userName = user?.name ?? '';
-      final userEmail = user?.email ?? '';
-      final userPhone = user?.phone ?? '';
-
-      // Create Razorpay order
-      final razorpayOrder = await _paymentService.createPaymentOrder(
-        amount: _total,
-        currency: 'INR',
+      // Place order directly (COD)
+      final request = PlaceOrderRequest(
+        addressId: _selectedAddress!.id,
+        paymentMethod: AppConstants.paymentCOD,
       );
 
-      // Open payment gateway
+      final order = await _orderService.placeOrder(request);
+
+      // Share order details to WhatsApp
+      await _shareToWhatsApp(order);
+
+      // Navigate to order confirmation
       if (!mounted) return;
-      _paymentService.openPaymentSheet(
-        orderId: razorpayOrder.orderId,
-        amount: razorpayOrder.amount,
-        name: 'FAH Retail',
-        description: 'Order payment',
-        email: userEmail,
-        phone: userPhone,
-        prefillName: userName,
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderConfirmationScreen(order: order),
+        ),
       );
     } catch (e) {
       setState(() => _isPlacingOrder = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error placing order: $e')));
     }
   }
 
-  Future<void> _completeOrder(String paymentId) async {
-    // Get user data for order
-    final user = await Helpers.getUserData();
-    final userName = user?.name ?? '';
-    final userEmail = user?.email ?? '';
-    final userPhone = user?.phone ?? '';
+  Future<void> _shareToWhatsApp(OrderModel order) async {
+    // Build order message
+    final StringBuffer message = StringBuffer();
+    message.writeln('🛒 *New Order Received!*');
+    message.writeln('');
+    message.writeln('📦 *Order Number:* ${order.orderNumber}');
+    message.writeln('');
+    message.writeln('*Items:*');
 
-    await _orderPresenter.placeOrder(
-      amount: _total,
-      email: userEmail,
-      phone: userPhone,
-      name: userName,
-    );
+    for (final item in widget.cart.items) {
+      message.writeln(
+        '• ${item.productNameValue} x ${item.quantity} - ${Formatters.formatPriceInt(item.totalPrice)}',
+      );
+    }
+
+    message.writeln('');
+    message.writeln('💰 *Subtotal:* ${Formatters.formatPriceInt(_subtotal)}');
+    if (_deliveryFee > 0) {
+      message.writeln(
+        '🚚 *Delivery Fee:* ${Formatters.formatPriceInt(_deliveryFee)}',
+      );
+    } else {
+      message.writeln('🚚 *Delivery Fee:* FREE');
+    }
+    message.writeln('💵 *Total:* ${Formatters.formatPriceInt(_total)}');
+    message.writeln('');
+    message.writeln('📍 *Delivery Address:*');
+    message.writeln(_selectedAddress!.fullName);
+    message.writeln(_selectedAddress!.fullAddress);
+    message.writeln('📞 ${_selectedAddress!.phone}');
+    if (_selectedAddress!.alternatePhone != null &&
+        _selectedAddress!.alternatePhone!.isNotEmpty) {
+      message.writeln('📞 Alt: ${_selectedAddress!.alternatePhone}');
+    }
+    message.writeln('');
+    message.writeln('💳 *Payment:* Cash on Delivery');
+
+    final encodedMessage = Uri.encodeComponent(message.toString());
+    final whatsappUrl =
+        'https://wa.me/${AppConstants.adminWhatsAppNumber}?text=$encodedMessage';
+
+    final uri = Uri.parse(whatsappUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   void _showAddressBottomSheet() {
@@ -533,7 +535,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                             color: Colors.white,
                           ),
                         )
-                        : const Text('Pay Now'),
+                        : const Text('Place Order'),
               ),
             ),
           ],

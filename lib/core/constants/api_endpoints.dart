@@ -58,8 +58,8 @@ class ApiEndpoints {
   static String adminEditProduct(int id) => '/admin/products/$id';
   static String adminDeleteProduct(int id) => '/admin/products/$id';
   static const String adminOrders = '/admin/orders';
-  static String adminOrderById(int id) => '/admin/order/$id';
-  static String adminUpdateOrderStatus(int id) => '/admin/order/$id/status';
+  static String adminOrderById(int id) => '/admin/orders/$id';
+  static String adminUpdateOrderStatus(int id) => '/admin/orders/$id/status';
 
   // Admin Banner Management
   static const String adminBanners = '/admin/banners';

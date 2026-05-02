@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Order, OrderItem, OrderStatusHistory, CartItem, Address, OrderStatus
+from app.models import User, Order, OrderItem, OrderStatusHistory, CartItem, Address, OrderStatus, PaymentStatus
 from app.schemas import OrderResponse, PlaceOrderRequest, OrderStatusUpdate
 from app.utils.auth import get_current_user
 
@@ -29,47 +29,51 @@ def order_to_response(order: Order) -> dict:
         "id": order.id,
         "order_number": order.order_number,
         "user_id": order.user_id,
-        "subtotal": order.subtotal,
-        "delivery_fee": order.delivery_fee,
-        "discount": order.discount,
-        "total_amount": order.total_amount,
+        "total_amount": float(order.total_amount),
+        "discount_amount": float(order.discount_amount) if order.discount_amount else 0,
+        "delivery_fee": float(order.delivery_fee) if order.delivery_fee else 0,
+        "payment_method": order.payment_method,
+        "payment_status": order.payment_status.value if order.payment_status else "pending",
         "status": order.status.value,
-        "payment_id": order.payment_id,
-        "payment_status": order.payment_status,
-        "estimated_delivery": order.estimated_delivery,
-        "address": {
+        "delivery_address": {
             "id": order.address.id,
-            "full_name": order.address.full_name,
+            "name": order.address.name,
             "phone": order.address.phone,
-            "address_line1": order.address.address_line1,
-            "address_line2": order.address.address_line2,
+            "building_number": order.address.building_number,
+            "address": order.address.address,
+            "landmark": order.address.landmark,
             "city": order.address.city,
             "state": order.address.state,
             "pincode": order.address.pincode,
-            "label": order.address.label,
+            "alternate_phone": order.address.alternate_phone,
             "is_default": order.address.is_default,
         },
         "items": [
             {
                 "id": item.id,
+                "order_id": item.order_id,
                 "product_id": item.product_id,
-                "product_name": item.product_name,
-                "product_image": item.product_image,
-                "quantity": item.quantity,
-                "price": item.price,
-                "subtotal": item.subtotal,
+                "product": {
+                    "name": item.product_name,
+                    "primary_image": item.product_image,
+                },
+                "qty": item.qty,
+                "price": float(item.price),
+                "discount_price": float(item.discount_price) if item.discount_price else None,
             }
             for item in order.items
         ],
         "status_history": [
             {
-                "status": history.status.value,
+                "id": history.id,
+                "order_id": history.order_id,
+                "status": history.status.value if hasattr(history.status, 'value') else history.status,
                 "note": history.note,
-                "timestamp": history.timestamp,
+                "timestamp": history.timestamp.isoformat() if history.timestamp else None,
             }
             for history in sorted(order.status_history, key=lambda x: x.timestamp, reverse=True)
         ],
-        "created_at": order.created_at,
+        "created_at": order.created_at.isoformat() if order.created_at else None,
     }
 
 
@@ -160,7 +164,7 @@ async def place_order(
                 detail=f"Product {product.name} is no longer available",
             )
 
-        if product.stock < cart_item.quantity:
+        if product.qty < cart_item.quantity:
             raise HTTPException(
                 status_code=400,
                 detail=f"Insufficient stock for {product.name}",
@@ -173,32 +177,36 @@ async def place_order(
         order_items.append({
             "product_id": product.id,
             "product_name": product.name,
-            "product_image": product.images[0].image_url if product.images else None,
-            "quantity": cart_item.quantity,
-            "price": price,
-            "subtotal": item_subtotal,
+            "product_image": product.primary_image or (product.images[0].image_url if product.images else None),
+            "qty": cart_item.quantity,
+            "price": float(product.price),
+            "discount_price": float(product.discount_price) if product.discount_price else None,
         })
 
         # Update stock
-        product.stock -= cart_item.quantity
+        product.qty -= cart_item.quantity
 
     # Calculate delivery fee
     delivery_fee = 0 if subtotal >= 49900 else 4900  # Free delivery over ₹499
     total_amount = subtotal + delivery_fee
+
+    # Determine payment status based on payment method
+    is_paid = request.razorpay_payment_id is not None
 
     # Create order
     order = Order(
         order_number=generate_order_number(),
         user_id=current_user.id,
         address_id=address.id,
-        subtotal=subtotal,
-        delivery_fee=delivery_fee,
-        discount=0,
         total_amount=total_amount,
-        status=OrderStatus.order_placed if request.payment_id else OrderStatus.pending,
-        payment_id=request.payment_id,
-        payment_status="paid" if request.payment_id else "pending",
-        estimated_delivery=datetime.utcnow() + timedelta(days=5),
+        discount_amount=0,
+        delivery_fee=delivery_fee,
+        payment_method=request.payment_method,
+        payment_status=PaymentStatus.paid if is_paid else PaymentStatus.pending,
+        razorpay_order_id=request.razorpay_order_id,
+        razorpay_payment_id=request.razorpay_payment_id,
+        razorpay_signature=request.razorpay_signature,
+        status=OrderStatus.order_placed,
     )
     db.add(order)
     db.flush()
@@ -214,7 +222,7 @@ async def place_order(
     # Add status history
     status_history = OrderStatusHistory(
         order_id=order.id,
-        status=order.status,
+        status=order.status.value,
         note="Order placed successfully",
     )
     db.add(status_history)
@@ -248,7 +256,7 @@ async def cancel_order(
 
     # Restore stock
     for item in order.items:
-        item.product.stock += item.quantity
+        item.product.qty += item.qty
 
     # Update order status
     order.status = OrderStatus.cancelled
@@ -256,7 +264,7 @@ async def cancel_order(
     # Add status history
     status_history = OrderStatusHistory(
         order_id=order.id,
-        status=OrderStatus.cancelled,
+        status=OrderStatus.cancelled.value,
         note="Cancelled by customer",
     )
     db.add(status_history)

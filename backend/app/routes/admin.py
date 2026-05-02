@@ -365,6 +365,21 @@ async def get_admin_orders(
     }
 
 
+@router.get("/orders/{order_id}")
+async def get_admin_order(
+    order_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    """Get order by ID for admin."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return order_to_response(order)
+
+
 @router.put("/orders/{order_id}/status")
 async def update_order_status(
     order_id: int,
@@ -388,14 +403,15 @@ async def update_order_status(
     # Add status history
     status_history = OrderStatusHistory(
         order_id=order.id,
-        status=new_status,
+        status=new_status.value,
         note=request.note,
     )
     db.add(status_history)
 
     db.commit()
+    db.refresh(order)
 
-    return {"success": True, "message": "Order status updated"}
+    return order_to_response(order)
 
 
 # ============ Banner Management ============

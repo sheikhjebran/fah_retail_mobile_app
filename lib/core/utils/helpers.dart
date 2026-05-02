@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/user_model.dart';
@@ -161,6 +162,14 @@ class Helpers {
     await prefs.remove(AppConstants.refreshTokenKey);
     await prefs.remove(AppConstants.userKey);
     await prefs.setBool(AppConstants.isLoggedInKey, false);
+
+    // Clear cart cache to prevent stale data
+    try {
+      final cartBox = Hive.box('cart');
+      await cartBox.clear();
+    } catch (_) {
+      // Ignore if box not open
+    }
   }
 
   /// Get user role

@@ -54,14 +54,14 @@ class CartPresenter {
   bool get isEmpty => _cart.isEmpty;
 
   /// Load cart
-  Future<void> loadCart() async {
+  Future<void> loadCart({bool forceRefresh = false}) async {
     if (_isLoading) return;
     _isLoading = true;
 
     _view?.showLoading();
 
     try {
-      _cart = await _cartService.getCart();
+      _cart = await _cartService.getCart(forceRefresh: forceRefresh);
       _view?.hideLoading();
 
       if (_cart.isEmpty) {
